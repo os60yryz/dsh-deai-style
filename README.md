@@ -126,6 +126,8 @@ python tests\regression_deai_style.py    # 功能开关回归，期望 RESULT=PA
 $env:DEEPSEEK_API_KEY = [Environment]::GetEnvironmentVariable('DEEPSEEK_API_KEY','User')
 node tests\ab_test.mjs --repeats 3       # 6 题 × 3 轮 × 2 组，期望 VERDICT=PASS（v1.3.0 实测 −72.8%）
 node tests\bypass_test.mjs              # 用户明令「分点列表」时是否守得住，期望 VERDICT=PASS（实测卡片行 29 → 0）
+node tests\style_ab.mjs --set long --repeats 3   # 两组提示词的对照实验（量的是排版密度，不是分数）
+node tests\rewrite_eval.mjs D:\path\my_messages.json --top 6   # 拿真实回复做改写评估，期望 VERDICT=PASS
 ```
 
 - `checks.mjs`：语法、无 BOM/LF、清单结构、规则库自检、检测器区分度（AI 样例 ≥70、人写样例 ≤20）、
@@ -142,6 +144,11 @@ node tests\bypass_test.mjs              # 用户明令「分点列表」时是�
 - `external_validate.mjs`：给任意目录下的文章打分并汇总，用来做**外部标尺**——拿 2022 年前（ChatGPT
   之前）的真人文章检验误报，见 [docs/reviews/external-validation.md](docs/reviews/external-validation.md)。
 - `score_my_output.mjs`：给会话记录里助手写过的正文打分，用来检查**我自己**的输出。
+- `style_ab.mjs`：两组提示词的对照实验，指标取自 `lint().layout`（箭头密度、加粗密度、行首加粗标签、
+  卡片行、偏密标记）。三轮实测结论是**往提示词里加文风规则量不出稳定效果**，记在
+  [docs/reviews/output-strategy.md](docs/reviews/output-strategy.md)。
+- `rewrite_eval.mjs`：拿真实回复当输入，让模型按一份改写策略重写，再量前后差。12 条实测排版指标被打平
+  （箭头 51→1、行首加粗标签 24→0、偏密样本 12/12→0/12），是这份输出策略唯一的正面证据。
 - `corpus.mjs`：`tests/corpus/{human_zh,ai_zh}.json` 里 20 条人工标注语料，只用 `lib/lint.js` 打分并比对
   各自的 `max`/`min` 阈值。它是独立于规则标定过程的外部标尺，用来发现「改规则把尺子也改了」。
 - `regression_deai_style.py`：A–G 七组 35 项断言，含「关 = 旧行为」与边界（非法 level、`injectLintTool:false`）。
@@ -165,6 +172,7 @@ node tests\bypass_test.mjs              # 用户明令「分点列表」时是�
 | `round3-bug.md` | 第三轮缺陷审计：11 条缺陷（高 2）+ 17 组变异测试（7 条零覆盖路径） |
 | `round3-fix.md` | 第三轮的逐条处置、文档与实现不一致的根因、**排版证据全面降为观察档**的决定与代价 |
 | `external-validation.md` | 外部校验：15 篇 2022 年前真人文章 0 篇越线；两处误报已修；**我自己的输出排版层面仍很 AI** |
+| `output-strategy.md` | 针对「我自己怎么写」的优化：64 条自有正文的体检、提示词路线被否的三轮实验、定稿的七条改写策略与收敛判据 |
 
 探针脚本已入库：`tests/red1/`、`tests/bug1/`、`tests/red2/`、`tests/bug2/`；
 变异测试台在 `tmp/mut3/run_mutations.py`（8 组变异，全部被断言杀死）。
