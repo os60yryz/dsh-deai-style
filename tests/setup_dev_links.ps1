@@ -11,7 +11,8 @@
 $ErrorActionPreference = 'Stop'
 
 $pkgRoot = Split-Path -Parent $PSScriptRoot
-$target = 'C:\Users\zhenz\.dsh\profiles\node_modules\@deepseek-ai'
+$dshHome = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' }
+$target = Join-Path $dshHome 'profiles\node_modules\@deepseek-ai'
 if (-not (Test-Path -LiteralPath $target)) {
     throw "profile 的 @deepseek-ai 目录不存在：$target（先确认 DSH profile 已安装依赖）"
 }
