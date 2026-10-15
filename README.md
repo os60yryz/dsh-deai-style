@@ -67,6 +67,20 @@ plugin_manager action=install_bundle target="<本仓库>\tmp\dsh-deai-style-1.1.
 - 卸载：`plugin_manager action=remove_bundle target="dsh-deai-style"`，重启后生效。
 - 本机目标 profile 是 **desktop**（Electron 应用独占管理，`dsh --profile desktop --dump-config` 不可用）。
 
+### 当 `github:` 安装报连接超时
+
+`install_bundle` 在解析 `github:` 规格前会先做一次 **5 秒**的 `github.com` 连通性探测。本机网络下
+`github.com` 的 HTTPS 经常连不上（实测 20 秒超时），而 `codeload.github.com` 正常（约 4 秒），
+于是 `github:` 规格会稳定报 `dsh: connection to github.com timed out after 5000ms`（`failedAt: spec-host`），
+**即使 `git push` / `git ls-remote` 能正常工作**。此时改用 codeload 的固定 commit 压缩包地址即可：
+
+```
+plugin_manager action=install_bundle target="https://codeload.github.com/os60yryz/dsh-deai-style/tar.gz/<commit-sha>"
+```
+
+它同样是「从 GitHub 安装」，而且因为钉住 commit 反而更可复现；要升级就换 `<commit-sha>`。
+pnpm 仍会尊重 `package.json` 的 `files` 白名单，`docs/` 与 `tests/` 不会进 profile。
+
 ### 不要用插件目录（`link:`）安装
 
 实测以目录安装时宿主报 `deai-style (dsh-deai-style): failed to import`、`application = failed`：

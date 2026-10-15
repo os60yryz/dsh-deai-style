@@ -71,7 +71,7 @@ score = max(ruleScore, strongScore) + metricBonus
 
 | 编号 | 样例 | v1.0.3 | v1.1.0 | 处置 |
 | --- | --- | --- | --- | --- |
-| FN-02 | 「以上就是…感谢大家的阅读」 | 0 | 70 | 新增 `scope-close`，`service-close` 去掉主语限制 |
+| FN-02 | 「以上就是…感谢大家的阅读」 | 0 | 70 | `service-close` 去掉主语限制并补上「以上就是…感谢阅读」类收尾声明 |
 | FN-03 | 「让我们一起来聊聊」 | 0 | 46 | 删 `let-us` 的 `(?=[^\p{Script=Han}])` 前瞻 |
 | FN-05 | 「✨…👉」 | 0 | 56 | emoji 白名单改为 `\p{Extended_Pictographic}` |
 | FN-06 | 「第一，明确目标；第二，…」 | 0 | 56 | `transition-cliche` 增补 `第[一二三四五六]` |
