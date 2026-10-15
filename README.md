@@ -41,7 +41,7 @@
 
 - **关（`enabled:false` 或 `level:"off"`）= 旧行为**：`apply()` 直接返回，不注册 section、不注册工具。
 - 非法 `level` 回退为 `strict`；缺省 config 全部走默认值。
-- `strict` 规则段 766 字符（10 条核心 + 5 条严格档）；`soft` 470 字符（仅核心 10 条）。
+- `strict` 规则段 802 字符（10 条核心 + 6 条严格档）；`soft` 470 字符（仅核心 10 条）。
 
 ## 安装
 
@@ -61,7 +61,7 @@ cd <本仓库>
 pnpm pack --pack-destination .\tmp          # tmp/ 已在 .gitignore
 ```
 ```
-plugin_manager action=install_bundle target="<本仓库>\tmp\dsh-deai-style-1.1.0.tgz"
+plugin_manager action=install_bundle target="<本仓库>\tmp\dsh-deai-style-1.2.0.tgz"
 ```
 
 - 卸载：`plugin_manager action=remove_bundle target="dsh-deai-style"`，重启后生效。
@@ -114,7 +114,7 @@ pnpm 仍会尊重 `package.json` 的 `files` 白名单，`docs/` 与 `tests/` �
 ```powershell
 cd <本仓库>
 pwsh -File tests\setup_dev_links.ps1     # 期望 SETUP PASS
-node tests\checks.mjs                    # 结构 + 区分度 + 开关行为 + 标定回归 + 长度/性能，期望 TOTAL pass=103 fail=0
+node tests\checks.mjs                    # 结构 + 区分度 + 开关行为 + 标定回归 + 长度/性能 + 红蓝军回归，期望 TOTAL pass=126 fail=0
 node tests\corpus.mjs                    # 20 条标注语料（12 人写 ≤30 分 + 8 AI 腔 ≥40 分），期望 CORPUS pass=20 fail=0
 python tests\regression_deai_style.py    # 功能开关回归，期望 RESULT=PASS (35/35)
 
@@ -125,8 +125,11 @@ node tests\ab_test.mjs --repeats 3       # 期望 VERDICT=PASS
 
 - `checks.mjs`：语法、无 BOM/LF、清单结构、规则库自检、检测器区分度（AI 样例 ≥70、人写样例 ≤20）、
   开/关两套断言、`defineTool` 参数编译、工具 `execute`/`render`，**标定回归**（强/弱反转变体分离、
-  `explainer-frame` 命中、科普腔不再漏报），以及**长度与性能**（同一 AI 样例 ×1/×2/×5/×20 均 ≥70 分且极差 ≤15、
-  10 万换行在 800ms 内完成、未闭合围栏被剥离、表格不再被删空）。后两组是 2026-10-16 按第一轮红蓝军意见补的。
+  `explainer-frame` 命中、科普腔不再漏报），**长度与性能**（同一 AI 样例 ×1/×2/×5/×20 均 ≥70 分且极差 ≤15、
+  10 万换行在 800ms 内完成、未闭合围栏被剥离、表格不再被删空），以及**第二轮红蓝军回归** 21 项
+  （`service-close` 裸「有」、纯排版受限出口、emoji 键帽与国旗、四反引号/`~~~` 围栏、半角键值对、
+  零宽字符规避、黑话去重、重叠命中只算一次、opening 作用域不受前置换行影响、`analyzed` 字段、
+  报告自洽，以及用断言锁住三条「刻意不定罪」的排版边界）。
 - `corpus.mjs`：`tests/corpus/{human_zh,ai_zh}.json` 里 20 条人工标注语料，只用 `lib/lint.js` 打分并比对
   各自的 `max`/`min` 阈值。它是独立于规则标定过程的外部标尺，用来发现「改规则把尺子也改了」。
 - `regression_deai_style.py`：A–G 七组 35 项断言，含「关 = 旧行为」与边界（非法 level、`injectLintTool:false`）。
@@ -143,6 +146,18 @@ node tests\ab_test.mjs --repeats 3       # 期望 VERDICT=PASS
 | `round1-red.md` | 第一轮红队攻击报告：12 条失守、14 条规则级缺陷、5 条设计级质疑 |
 | `round1-bug.md` | 第一轮代码级缺陷审计：7 条缺陷（含 O(n²) 正则与长文漏报） |
 | `round1-fix.md` | 第一轮的逐条处置、评分模型改动理由、刻意保留的边界 |
+| `round2-red.md` | 第二轮红队报告：12 条失守（5 误报 / 4 漏报 / 3 口径）+ 9 组未打穿 |
+| `round2-bug.md` | 第二轮代码级缺陷审计：7 类缺陷 + 测试可信度（断言对分数不敏感） |
+| `round2-fix.md` | 第二轮的逐条处置、**为什么「纯排版」不能单独定罪**（含 AI/人类排版权重重叠数据） |
+
+探针脚本已入库：`tests/red1/`、`tests/bug1/`、`tests/red2/`、`tests/bug2/`（产物由 `.gitignore` 排除）。
+
+### 一条重要的能力边界
+
+**排版工整本身不是定罪证据。** 第二轮实测的排版权重里，AI 样本（纯列表 3.7 / 纯表格 4.0 / emoji 5.33）
+与人类样本（干净清单 5.34 / 工作日志 4.0 / 会议纪要 2.0）完全重叠，所以「只有排版、没有任何语言套话」的回答
+只会得到一个 ≤25 分的观察分，不会进「中等 AI 腔」。卡片的落点是：**排版是观察信号，用词与句式才是定罪证据。**
+同理，DSH 的 `agent/assistant-stream` 是只读事件，插件**无法**改写助手已生成的文本——它是提示 + 自检，不是强制过滤器。
 
 已知边界与未解决问题汇总在 `docs/验收报告.md` 第八、九节。
 

@@ -11,3 +11,8 @@ tmp/
 # 红蓝军探针的输出（脚本入库，产物不入库）
 tests/red1/out*.json
 tests/bug1/out*.json
+tests/red2/out*.json
+tests/red2/*.out.json
+tests/bug2/*.out.json
+tests/bug2/mut_result.json
+tests/bug2/mut/summary.json

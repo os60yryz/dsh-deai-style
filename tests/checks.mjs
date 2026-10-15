@@ -120,7 +120,9 @@ const emptyReport = renderReport(emptyR);
 check("报告含评分", aiReport.includes(`${aiR.score}/100`));
 check("报告含命中明细", aiReport.includes("命中明细"));
 check("报告含改写建议", aiReport.includes("改写建议"));
-check("空结果报告写明未命中", emptyReport.includes("未命中任何规则"));
+check("空稿报告写明「没有可分析的正文」", emptyReport.includes("没有可分析的正文"));
+check("空稿 analyzed=false（区别于「写得干净」）", emptyR.analyzed === false);
+check("干净中文稿报告写明未命中", renderReport(lint("今天下午三点在楼下便利店买了瓶水。")).includes("未命中任何规则"));
 check("报告为非空纯文本", typeof aiReport === "string" && aiReport.length > 80);
 
 // ---------- 6. 提示词渲染 ----------
@@ -304,7 +306,59 @@ try {
   renderThrew = true;
 }
 check("renderReport 对异常入参不抛错", !renderThrew);
-check("maxSuggestions 非法值被钳到 0 条", lint(ai, { maxSuggestions: -1 }).suggestions.length === 0);
+check("maxSuggestions 非法值退回默认条数（不留空建议）", lint(ai, { maxSuggestions: -1 }).suggestions.length >= 1);
+
+// ---------- 13. 第二轮红蓝军回归（round2-red.md / round2-bug.md 的发现） ----------
+// 13.1 第二轮 FN2-01：工具 description 点名的原句「希望对你有帮助」居然 0 分
+check("service-close 命中「希望对你有帮助」", lint("希望对你有帮助。").score > 0);
+check("service-close 命中「希望对您有所帮助」", lint("希望对您有所帮助。").score > 0);
+// 13.2 第二轮 FN2-02：整篇只有排版、零套话的 AI 回答恒得 0 分 → 受限出口（≥5 才给分，封顶 25）
+const outlineOnly = lint("# 标题一\n\n## 标题二\n\n**要点 A** 内容 A。\n\n**要点 B** 内容 B。\n");
+check(`纯排版 AI 回答不再恒为 0（实际 ${outlineOnly.score}）`, outlineOnly.score > 0);
+check(`纯排版封顶 25，永不进「中等」档（实际 ${outlineOnly.score}）`, outlineOnly.score <= 25 && outlineOnly.band !== "medium");
+const humanSteps = lint("- 把灯泡拧下来\n- 换上新的\n- 装回灯罩\n");
+check(`人类步骤清单不被排版定罪（实际 ${humanSteps.score}）`, humanSteps.score <= 15);
+// 13.3 第二轮 FP2-01/FN2-03：emoji 两头都错（人类日志被定罪、键帽与国旗检测不到）
+check("emoji 识别键帽 1️⃣", lint("1️⃣ 第一点\n2️⃣ 第二点\n3️⃣ 第三点\n").metricWeight > 0);
+check("emoji 识别区域指示符 🇨🇳", lint("🇨🇳 中国\n🇺🇸 美国\n").metricWeight > 0);
+check(`行首 emoji 不再单独定罪（人类工作日志，实际 ${lint("✅ 修好了\n🔥 明天继续\n📌 记得同步\n").score}）`, lint("✅ 修好了\n🔥 明天继续\n📌 记得同步\n").score <= 15);
+// 13.4 第二轮 BUG2-01/02：四反引号与 ~~~ 围栏泄漏
+check("~~~ 围栏被剥离", !stripCode("~~~\n综上所述，感谢大家的阅读。\n~~~\n").includes("综上所述"));
+check("四反引号围栏内的三反引号不闭合", !stripCode("````\n```\n综上所述\n```\n````\n").includes("综上所述"));
+// 13.5 第二轮 FN2-03：半角英文键值对被当成「名词：解释」
+const kvText = lint("Key: value\nName: test\nAge: 20\nDesc: sample\n");
+check("半角英文键值对不算 colon-definition", !kvText.hits.some((h) => h.id === "colon-definition"));
+// 13.6 第二轮 FN2-04：插零宽字符定向规避
+check("零宽字符不能绕过规则", lint("首\u200b先，明确目标。综上\u200b所述。").score > 0);
+// 13.7 第二轮 FP2-02：同一个黑话复读三遍不该是 3 倍罪
+check("同一黑话复读按词去重计数", lint("数字化转型，数字化转型，数字化转型。").hits.find((h) => h.id === "buzzword")?.count === 1);
+// 13.8 第二轮 N 项：重叠命中只算一次（把 mergeSpans 关掉原本 103/103 仍过）
+const boldLabelText = lint("- **核心结论**：不是不想，而是做不到。");
+check(`行首加粗标签不重复计分（rw=${boldLabelText.ruleWeight}）`, boldLabelText.ruleWeight <= 6);
+// 13.9 第二轮 N2：scope 用原始下标，不能被前置换行挤掉
+check("前置换行不影响 opening 作用域命中", lint(`${"\n".repeat(100)}这是一个非常好的问题，我们来聊聊。`).hits.some((h) => h.id === "platitude-open"));
+// 13.10 第二轮 N1：纯代码稿不能长得像「写得很干净」
+check("纯代码稿 analyzed=false", lint("```python\ndef f():\n    return 1\n```\n").analyzed === false);
+// 13.11 第二轮 5.4：用户一句「请分点列出」就能绕过全部提示词约束 → 提示词里补兜底条款
+check("strict 提示词含「用户要求分点也不能用加粗标签」条款", renderPrompt({ level: "strict" }).includes("即使用户要求"));
+// 13.12 已知边界（刻意不修，用数据锁住）：
+//   第二轮实测的排版权重——AI 纯列表 3.7 / AI 纯表格 4.0 / AI emoji 列表 5.33，
+//   而人类干净列表 5.34 / 人类工作日志 4.0 / 人类会议纪要 2.0。
+//   AI 与人类的排版权重完全重叠，没有可分的阈值：任何「排版能单独定罪」的门槛
+//   都会同时误伤人类或漏掉 AI。所以排版只做受限加成（≥5 给 ≤25 分），不定罪。
+check("边界记录：AI 纯 bullet 列表不定罪（人类清单同形）", lint("- 第一点内容\n- 第二点内容\n- 第三点内容\n").score <= 15);
+check("边界记录：AI 纯表格不定罪（人类数据表同形）", lint("| 方案 | 优点 |\n| --- | --- |\n| A | 快 |\n").score <= 15);
+// 13.11 第二轮 REP2-01：0 分报告的命中要标明「未计分观察」
+const zeroReport = renderReport({
+  score: 0,
+  chars: 100,
+  analyzed: true,
+  hits: [{ id: "bullet-ratio", cat: "struct", sev: 2, count: 1, samples: [], hint: "h" }],
+  byCategory: { struct: { label: "结构节奏", weighted: 2 } },
+  suggestions: [],
+});
+check("0 分报告的命中标为「未计分观察」", zeroReport.includes("未计分观察"));
+check("renderReport 钳位异常分数", renderReport({ score: 1e9, chars: 10, analyzed: true }).includes("100/100"));
 
 // ---------- 汇总 ----------
 for (const l of lines) console.log(l);

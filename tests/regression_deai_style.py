@@ -97,7 +97,7 @@ def check_files():
 def check_encoding():
     bad_bom, bad_eol, bad_utf8 = [], [], []
     for dirpath, dirnames, filenames in os.walk(ROOT):
-        dirnames[:] = [d for d in dirnames if d not in ("node_modules", ".git", "__pycache__")]
+        dirnames[:] = [d for d in dirnames if d not in ("node_modules", ".git", "__pycache__", "tmp")]
         for fn in filenames:
             if os.path.splitext(fn)[1].lower() not in TEXT_EXT:
                 continue
@@ -122,7 +122,7 @@ def check_encoding():
 def check_syntax():
     js_files = []
     for dirpath, dirnames, filenames in os.walk(ROOT):
-        dirnames[:] = [d for d in dirnames if d not in ("node_modules", ".git", "__pycache__")]
+        dirnames[:] = [d for d in dirnames if d not in ("node_modules", ".git", "__pycache__", "tmp")]
         for fn in filenames:
             if fn.endswith(".js") or fn.endswith(".mjs"):
                 js_files.append(os.path.relpath(os.path.join(dirpath, fn), ROOT).replace(os.sep, "/"))
