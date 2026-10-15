@@ -498,6 +498,22 @@ check(
   `rw=${rhythmHeavy.ruleWeight} rhythm=${rhythmHeavy.rhythmWeight} score=${rhythmHeavy.score}`,
 );
 
+// ---------- 15. 外部校验回归（2022 年前真人语料，docs/reviews/external-validation.md） ----------
+// 15.1 原 `rhetorical-qa` 的 `\s*` 跨行，把「……吗？\n为什么……」这种连续两个真问题当自问自答
+check(
+  "15.1 rhetorical-qa 不跨行误报",
+  !lint("这样真的好吗？\n为什么会出现这种结果？\n").hits.some((h) => h.id === "rhetorical-qa"),
+);
+check("15.2 rhetorical-qa 仍抓同行自问自答", lint("真的会这样吗？答案是会的。").hits.some((h) => h.id === "rhetorical-qa"));
+// 15.2 「等等」是正常汉语收尾词（两篇博客园 2019 技术笔记因此被误报）
+check(
+  "15.3 enumerate-all 不再拿「等等」定罪",
+  !lint("常见的单元测试、接口测试、自动化测试、集成测试等等都是必要的。\n").hits.some(
+    (h) => h.id === "enumerate-all",
+  ),
+);
+check("15.4 enumerate-all 仍抓穷举腔开场", lint("主要可以从以下几个方面说明。\n").hits.some((h) => h.id === "enumerate-all"));
+
 // ---------- 汇总 ----------
 for (const l of lines) console.log(l);
 console.log(`TOTAL pass=${pass} fail=${fail}`);

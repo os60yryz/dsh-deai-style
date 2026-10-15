@@ -118,7 +118,7 @@ pnpm 仍会尊重 `package.json` 的 `files` 白名单，`docs/` 与 `tests/` �
 ```powershell
 cd <本仓库>
 pwsh -File tests\setup_dev_links.ps1     # 期望 SETUP PASS
-node tests\checks.mjs                    # 结构 + 区分度 + 开关行为 + 标定回归 + 长度/性能 + 红蓝军回归，期望 TOTAL pass=154 fail=0
+node tests\checks.mjs                    # 结构 + 区分度 + 开关行为 + 标定回归 + 长度/性能 + 三轮红蓝军回归 + 外部校验回归，期望 TOTAL pass=158 fail=0
 node tests\corpus.mjs                    # 20 条标注语料（12 人写 ≤30 分 + 8 AI 腔 ≥40 分），期望 CORPUS pass=20 fail=0
 python tests\regression_deai_style.py    # 功能开关回归，期望 RESULT=PASS (35/35)
 
@@ -137,7 +137,11 @@ node tests\bypass_test.mjs              # 用户明令「分点列表」时是�
   报告自洽，以及用断言锁住三条「刻意不定罪」的排版边界），以及**第三轮红蓝军回归** 28 项
   （排版证据必须全部标 `evidence:"format"`、规则/指标数量门禁、`formatNudge` 阈值与封顶、
   节奏加成上限、`k` 的长度归一化、9 字强信号稿的 `analyzed`、CRLF 表格、引用块围栏、
-  四空格缩进代码、跨行行内代码、抽象名词复读只计一次、卡片禁令进核心档）。
+  四空格缩进代码、跨行行内代码、抽象名词复读只计一次、卡片禁令进核心档），以及**外部校验回归** 4 项
+  （自问自答不得跨行、`enumerate-all` 不得拿「等等」定罪）。
+- `external_validate.mjs`：给任意目录下的文章打分并汇总，用来做**外部标尺**——拿 2022 年前（ChatGPT
+  之前）的真人文章检验误报，见 [docs/reviews/external-validation.md](docs/reviews/external-validation.md)。
+- `score_my_output.mjs`：给会话记录里助手写过的正文打分，用来检查**我自己**的输出。
 - `corpus.mjs`：`tests/corpus/{human_zh,ai_zh}.json` 里 20 条人工标注语料，只用 `lib/lint.js` 打分并比对
   各自的 `max`/`min` 阈值。它是独立于规则标定过程的外部标尺，用来发现「改规则把尺子也改了」。
 - `regression_deai_style.py`：A–G 七组 35 项断言，含「关 = 旧行为」与边界（非法 level、`injectLintTool:false`）。
@@ -160,6 +164,7 @@ node tests\bypass_test.mjs              # 用户明令「分点列表」时是�
 | `round3-red.md` | 第三轮红队报告：11 条失守（3 误报 / 3 漏报 / 4 口径 / 1 测试可信度）+ 7 组未打穿 |
 | `round3-bug.md` | 第三轮缺陷审计：11 条缺陷（高 2）+ 17 组变异测试（7 条零覆盖路径） |
 | `round3-fix.md` | 第三轮的逐条处置、文档与实现不一致的根因、**排版证据全面降为观察档**的决定与代价 |
+| `external-validation.md` | 外部校验：15 篇 2022 年前真人文章 0 篇越线；两处误报已修；**我自己的输出排版层面仍很 AI** |
 
 探针脚本已入库：`tests/red1/`、`tests/bug1/`、`tests/red2/`、`tests/bug2/`；
 变异测试台在 `tmp/mut3/run_mutations.py`（8 组变异，全部被断言杀死）。

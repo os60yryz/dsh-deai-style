@@ -1,0 +1,734 @@
+{
+  "generatedAt": "2026-10-15T15:04:58.081Z",
+  "dir": "D:\\GitRepos\\Others\\tmp\\corpus_pre2022",
+  "sampleCount": 17,
+  "analyzable": 15,
+  "mean": 11,
+  "median": 13,
+  "max": 31,
+  "over15": 3,
+  "over35": 0,
+  "rows": [
+    {
+      "name": "cnblogs_archive_2019_02",
+      "genre": "技术博客(列表)",
+      "url": "https://www.cnblogs.com/talent-dll/p/archive/2019/02",
+      "dates": [
+        "2019-02-11"
+      ],
+      "title": "随笔档案「2019年2月」 - 猫尾巴2019 - 博客园",
+      "chars": 150,
+      "score": 0,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "colon-definition",
+          "cat": "struct",
+          "sev": 1,
+          "count": 2,
+          "tier": "format"
+        }
+      ]
+    },
+    {
+      "name": "cnblogs_archive_2019_02_post1",
+      "genre": "技术博客",
+      "url": "https://www.cnblogs.com/talent-dll/p/10361929.html",
+      "dates": [
+        "2019-02-11",
+        "2017-09-14"
+      ],
+      "title": "java转大数据的学习路线 - 猫尾巴2019 - 博客园",
+      "chars": 6312,
+      "score": 14,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "translationese",
+          "cat": "lex",
+          "sev": 2,
+          "count": 4,
+          "tier": "convict"
+        },
+        {
+          "id": "abstract-noun-stack",
+          "cat": "lex",
+          "sev": 1,
+          "count": 1,
+          "tier": "convict"
+        },
+        {
+          "id": "sentence-burstiness",
+          "cat": "struct",
+          "sev": 2,
+          "count": 0.71,
+          "tier": "format"
+        }
+      ]
+    },
+    {
+      "name": "cnblogs_archive_2019_06",
+      "genre": "技术博客(列表)",
+      "url": "https://www.cnblogs.com/lzq666/p/archive/2019/06",
+      "dates": [
+        "2019-06-18",
+        "2019-06-09",
+        "2019-06-02"
+      ],
+      "title": "随笔档案「2019年6月」 - ╄冷丶夜♂ - 博客园",
+      "chars": 520,
+      "score": 0,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "colon-definition",
+          "cat": "struct",
+          "sev": 1,
+          "count": 2,
+          "tier": "format"
+        },
+        {
+          "id": "emdash-density",
+          "cat": "struct",
+          "sev": 1,
+          "count": 1.28,
+          "tier": "format"
+        },
+        {
+          "id": "sentence-burstiness",
+          "cat": "struct",
+          "sev": 2,
+          "count": 0.56,
+          "tier": "format"
+        }
+      ]
+    },
+    {
+      "name": "cnblogs_archive_2019_06_post1",
+      "genre": "技术博客",
+      "url": "https://www.cnblogs.com/lzq666/p/11046444.html",
+      "dates": [
+        "2019-06-18"
+      ],
+      "title": "《分布式系统关注点——数据一致性（上篇）》阅读笔记 - ╄冷丶夜♂ - 博客园",
+      "chars": 719,
+      "score": 0,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "sentence-burstiness",
+          "cat": "struct",
+          "sev": 2,
+          "count": 0.99,
+          "tier": "format"
+        },
+        {
+          "id": "emdash-density",
+          "cat": "struct",
+          "sev": 1,
+          "count": 0.93,
+          "tier": "format"
+        }
+      ]
+    },
+    {
+      "name": "cnblogs_archive_2019_06_post2",
+      "genre": "技术博客",
+      "url": "https://www.cnblogs.com/lzq666/p/11002245.html",
+      "dates": [
+        "2019-06-09",
+        "2019-06-18"
+      ],
+      "title": "《技术三板斧：关于技术规划、管理、架构的思考》阅读笔记 - ╄冷丶夜♂ - 博客园",
+      "chars": 577,
+      "score": 11,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "uplift-close",
+          "cat": "dis",
+          "sev": 1,
+          "count": 1,
+          "tier": "convict"
+        },
+        {
+          "id": "colon-definition",
+          "cat": "struct",
+          "sev": 1,
+          "count": 1.52,
+          "tier": "format"
+        },
+        {
+          "id": "sentence-burstiness",
+          "cat": "struct",
+          "sev": 2,
+          "count": 0.69,
+          "tier": "format"
+        }
+      ]
+    },
+    {
+      "name": "cnblogs_archive_2019_06_post3",
+      "genre": "技术博客",
+      "url": "https://www.cnblogs.com/lzq666/p/11002439.html",
+      "dates": [
+        "2019-06-02",
+        "2019-06-11"
+      ],
+      "title": "支付宝架构师眼中的高并发架构 - ╄冷丶夜♂ - 博客园",
+      "chars": 593,
+      "score": 0,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "sentence-burstiness",
+          "cat": "struct",
+          "sev": 2,
+          "count": 0.65,
+          "tier": "format"
+        },
+        {
+          "id": "colon-definition",
+          "cat": "struct",
+          "sev": 1,
+          "count": 0.83,
+          "tier": "format"
+        }
+      ]
+    },
+    {
+      "name": "douban_review_9903103",
+      "genre": "影评",
+      "url": "https://movie.douban.com/review/9903103/",
+      "dates": [],
+      "title": "豆瓣",
+      "chars": 0,
+      "score": 0,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": false,
+      "hits": []
+    },
+    {
+      "name": "gov_gongbao_2020",
+      "genre": "政府公文",
+      "url": "https://www.gov.cn/gongbao/content/2020/content_5469631.htm",
+      "dates": [
+        "2024-12-25",
+        "2020-01-20",
+        "2019-12-26",
+        "2023-03-29",
+        "2016-05-11",
+        "2014-02-23",
+        "2014-02-18"
+      ],
+      "title": "中共中央办公厅 国务院办公厅印发《关于做好2020年元旦春节期间有关工作的通知》__2020年第2号国务院公报_中国政府",
+      "chars": 3559,
+      "score": 13,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "triadic-list",
+          "cat": "syn",
+          "sev": 1,
+          "count": 5,
+          "tier": "convict"
+        },
+        {
+          "id": "sentence-burstiness",
+          "cat": "struct",
+          "sev": 2,
+          "count": 0.63,
+          "tier": "format"
+        },
+        {
+          "id": "colon-definition",
+          "cat": "struct",
+          "sev": 1,
+          "count": 0.61,
+          "tier": "format"
+        }
+      ]
+    },
+    {
+      "name": "guokr_sleep_2018",
+      "genre": "科普",
+      "url": "https://www.guokr.com/article/438611/",
+      "dates": [
+        "2014-06-16",
+        "2014-05-23",
+        "2010-10-20"
+      ],
+      "title": "【信息图示】熬夜看球，你准备好了吗？| 果壳 科技有意思",
+      "chars": 1577,
+      "score": 11,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "translationese",
+          "cat": "lex",
+          "sev": 2,
+          "count": 1,
+          "tier": "convict"
+        },
+        {
+          "id": "colon-definition",
+          "cat": "struct",
+          "sev": 1,
+          "count": 1.52,
+          "tier": "format"
+        },
+        {
+          "id": "sentence-burstiness",
+          "cat": "struct",
+          "sev": 2,
+          "count": 0.59,
+          "tier": "format"
+        }
+      ]
+    },
+    {
+      "name": "jianshu_2019_newyear",
+      "genre": "随笔",
+      "url": "https://www.jianshu.com/p/13186ee4739b",
+      "dates": [
+        "2019-01-10"
+      ],
+      "title": "2019，来了 - 简书",
+      "chars": 3391,
+      "score": 14,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "not-x-but-y",
+          "cat": "syn",
+          "sev": 3,
+          "count": 2,
+          "tier": "convict"
+        }
+      ]
+    },
+    {
+      "name": "kr_2019_outlook",
+      "genre": "商业分析",
+      "url": "https://36kr.com/p/1723356643329",
+      "dates": [],
+      "title": "",
+      "chars": 39,
+      "score": 0,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": true,
+      "hits": []
+    },
+    {
+      "name": "ruanyifeng_weekly_2019",
+      "genre": "个人博客",
+      "url": "https://www.ruanyifeng.com/blog/2019/01/weekly-issue-40.html",
+      "dates": [
+        "2011-07-11",
+        "2019-01-18",
+        "2018-12-21",
+        "2018-12-07",
+        "2018-12-26",
+        "2019-01-14",
+        "2018-12-31",
+        "2018-12-03",
+        "2018-12-13",
+        "2007-08-27",
+        "2018-12-09",
+        "2018-12-14",
+        "2018-02-26",
+        "2026-01-23",
+        "2026-01-16",
+        "2026-01-09",
+        "2025-12-26",
+        "2019-01-19",
+        "2019-01-20",
+        "2019-01-21",
+        "2019-01-22",
+        "2019-01-23",
+        "2019-01-28",
+        "2019-01-30",
+        "2022-06-23"
+      ],
+      "title": "每周分享第 40 期 - 阮一峰的网络日志",
+      "chars": 7356,
+      "score": 16,
+      "band": "slight",
+      "bandLabel": "轻微 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "not-x-but-y",
+          "cat": "syn",
+          "sev": 3,
+          "count": 4,
+          "tier": "convict"
+        },
+        {
+          "id": "sentence-burstiness",
+          "cat": "struct",
+          "sev": 2,
+          "count": 0.63,
+          "tier": "format"
+        }
+      ]
+    },
+    {
+      "name": "sina_rmrb_comment_2019",
+      "genre": "新闻评论",
+      "url": "https://tech.sina.cn/i/gn/2019-01-17/detail-ihqfskcn8083801.d.html",
+      "dates": [
+        "2019-01-17",
+        "2026-10-15"
+      ],
+      "title": "人民日报评论：打破“朝九晚五”，新工作时代来临？_手机新浪网",
+      "chars": 1223,
+      "score": 27,
+      "band": "slight",
+      "bandLabel": "轻微 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "vague-adverb",
+          "cat": "lex",
+          "sev": 2,
+          "count": 1,
+          "tier": "convict"
+        },
+        {
+          "id": "not-only-also",
+          "cat": "syn",
+          "sev": 1,
+          "count": 1,
+          "tier": "convict"
+        },
+        {
+          "id": "transition-cliche",
+          "cat": "lex",
+          "sev": 1,
+          "count": 1,
+          "tier": "convict"
+        },
+        {
+          "id": "uplift-close",
+          "cat": "dis",
+          "sev": 1,
+          "count": 1,
+          "tier": "convict"
+        },
+        {
+          "id": "sentence-burstiness",
+          "cat": "struct",
+          "sev": 2,
+          "count": 0.64,
+          "tier": "format"
+        },
+        {
+          "id": "colon-definition",
+          "cat": "struct",
+          "sev": 1,
+          "count": 0.61,
+          "tier": "format"
+        }
+      ]
+    },
+    {
+      "name": "sspai_2019",
+      "genre": "产品评测",
+      "url": "https://sspai.com/post/53428",
+      "dates": [],
+      "title": "少数派 - 高效工作，品质生活",
+      "chars": 0,
+      "score": 0,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": false,
+      "hits": []
+    },
+    {
+      "name": "xinhua_2019_lianghui",
+      "genre": "权威解读",
+      "url": "http://www.xinhuanet.com/politics/2019lh/qwjd.htm",
+      "dates": [
+        "2019-03-15",
+        "2019-03-12",
+        "2019-03-10",
+        "2019-03-09",
+        "2019-03-08",
+        "2019-03-07",
+        "2019-03-06",
+        "2019-03-05",
+        "2019-03-04",
+        "2019-03-03",
+        "2019-03-01",
+        "2019-02-21",
+        "2019-02-20",
+        "2019-02-27",
+        "2019-02-28",
+        "2019-02-26",
+        "2019-02-24",
+        "2019-02-25"
+      ],
+      "title": "权威解读_2019全国两会融媒体专题_新华网",
+      "chars": 1652,
+      "score": 13,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "empty-grandeur",
+          "cat": "lex",
+          "sev": 2,
+          "count": 1,
+          "tier": "convict"
+        },
+        {
+          "id": "sentence-burstiness",
+          "cat": "struct",
+          "sev": 2,
+          "count": 1.98,
+          "tier": "format"
+        },
+        {
+          "id": "colon-definition",
+          "cat": "struct",
+          "sev": 1,
+          "count": 2,
+          "tier": "format"
+        },
+        {
+          "id": "emdash-density",
+          "cat": "struct",
+          "sev": 1,
+          "count": 1.61,
+          "tier": "format"
+        }
+      ]
+    },
+    {
+      "name": "xinhua_2019_topnews",
+      "genre": "新闻报道",
+      "url": "http://www.xinhuanet.com/politics/2019-12/29/c_1125401425.htm",
+      "dates": [
+        "2019-12-29",
+        "2017-09-22",
+        "2019-12-21",
+        "2019-12-17",
+        "2019-12-14",
+        "2019-12-13",
+        "2018-04-24"
+      ],
+      "title": "2019年国内十大新闻背后的关键词，你get了几个？-新华网",
+      "chars": 2035,
+      "score": 31,
+      "band": "slight",
+      "bandLabel": "轻微 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "empty-grandeur",
+          "cat": "lex",
+          "sev": 2,
+          "count": 2,
+          "tier": "convict"
+        },
+        {
+          "id": "let-us",
+          "cat": "syn",
+          "sev": 3,
+          "count": 1,
+          "tier": "convict"
+        },
+        {
+          "id": "abstract-noun-stack",
+          "cat": "lex",
+          "sev": 1,
+          "count": 1,
+          "tier": "convict"
+        },
+        {
+          "id": "transition-cliche",
+          "cat": "lex",
+          "sev": 1,
+          "count": 1,
+          "tier": "convict"
+        },
+        {
+          "id": "sentence-burstiness",
+          "cat": "struct",
+          "sev": 2,
+          "count": 0.54,
+          "tier": "format"
+        }
+      ]
+    },
+    {
+      "name": "zgjx_2019_0623",
+      "genre": "行业评论",
+      "url": "http://www.zgjx.cn/2019-06/23/c_138162365.htm",
+      "dates": [
+        "2019-06-23",
+        "2018-12-16",
+        "2018-12-18",
+        "2017-11-08"
+      ],
+      "title": "四十不惑：方向更明确，步伐更坚定 - 中国记协网",
+      "chars": 1566,
+      "score": 15,
+      "band": "clean",
+      "bandLabel": "基本没有 AI 腔",
+      "analyzed": true,
+      "hits": [
+        {
+          "id": "buzzword",
+          "cat": "lex",
+          "sev": 2,
+          "count": 1,
+          "tier": "convict"
+        },
+        {
+          "id": "not-only-also",
+          "cat": "syn",
+          "sev": 1,
+          "count": 1,
+          "tier": "convict"
+        },
+        {
+          "id": "sentence-burstiness",
+          "cat": "struct",
+          "sev": 2,
+          "count": 0.64,
+          "tier": "format"
+        },
+        {
+          "id": "colon-definition",
+          "cat": "struct",
+          "sev": 1,
+          "count": 1.03,
+          "tier": "format"
+        }
+      ]
+    }
+  ],
+  "ruleTally": [
+    {
+      "id": "sentence-burstiness",
+      "cat": "struct",
+      "tier": "format",
+      "texts": 12,
+      "total": 9.25
+    },
+    {
+      "id": "colon-definition",
+      "cat": "struct",
+      "tier": "format",
+      "texts": 9,
+      "total": 12.12
+    },
+    {
+      "id": "emdash-density",
+      "cat": "struct",
+      "tier": "format",
+      "texts": 3,
+      "total": 3.8200000000000003
+    },
+    {
+      "id": "not-x-but-y",
+      "cat": "syn",
+      "tier": "convict",
+      "texts": 2,
+      "total": 6
+    },
+    {
+      "id": "translationese",
+      "cat": "lex",
+      "tier": "convict",
+      "texts": 2,
+      "total": 5
+    },
+    {
+      "id": "empty-grandeur",
+      "cat": "lex",
+      "tier": "convict",
+      "texts": 2,
+      "total": 3
+    },
+    {
+      "id": "abstract-noun-stack",
+      "cat": "lex",
+      "tier": "convict",
+      "texts": 2,
+      "total": 2
+    },
+    {
+      "id": "uplift-close",
+      "cat": "dis",
+      "tier": "convict",
+      "texts": 2,
+      "total": 2
+    },
+    {
+      "id": "not-only-also",
+      "cat": "syn",
+      "tier": "convict",
+      "texts": 2,
+      "total": 2
+    },
+    {
+      "id": "transition-cliche",
+      "cat": "lex",
+      "tier": "convict",
+      "texts": 2,
+      "total": 2
+    },
+    {
+      "id": "triadic-list",
+      "cat": "syn",
+      "tier": "convict",
+      "texts": 1,
+      "total": 5
+    },
+    {
+      "id": "vague-adverb",
+      "cat": "lex",
+      "tier": "convict",
+      "texts": 1,
+      "total": 1
+    },
+    {
+      "id": "let-us",
+      "cat": "syn",
+      "tier": "convict",
+      "texts": 1,
+      "total": 1
+    },
+    {
+      "id": "buzzword",
+      "cat": "lex",
+      "tier": "convict",
+      "texts": 1,
+      "total": 1
+    }
+  ]
+}
