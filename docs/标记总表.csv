@@ -1,0 +1,69 @@
+编号,语言,类别,标记名,表现,来源,可否机检,正则可行性
+1,en,用词,AI 高频词,delve／tapestry／landscape（抽象）／pivotal／testament／underscore／showcase／vibrant 等 36 词在 LLM 文本中显著超频；判据是密度与共现不是出现本身,S3+S4,可以,高
+2,en,用词,宣传腔形容词,boasts a／vibrant／rich（比喻义）／profound／renowned／breathtaking／stunning／nestled／in the heart of,S3+S2,可以,高
+3,en,用词,模糊归因,Industry reports／Observers have cited／Experts argue／Some critics argue／several sources,S3+S5,部分,中
+4,en,用词,填充短语,in order to→to／due to the fact that→because／at this point in time→now／it is important to note that,S3+S14,可以,高
+5,en,用词,过度对冲,It could potentially possibly be argued that the policy might have some effect,S3+S14,可以,高
+6,en,用词,抽象隐喻名词,substrate／wedge／locus／vantage／nexus／bedrock／north star／flywheel,S14,部分,中
+7,en,句法,否定平行,It is not just X it is Y／not only ... but also／not X but Y；人类基线 0.065 次每千字符,S3+S5+S6+S9,可以,高
+8,en,句法,-ing 收尾表面分析,highlighting／underscoring／ensuring／reflecting／showcasing 等现在分词挂在句尾；一篇内 5+ 处为强信号,S3+S5+S2,可以,高
+9,en,句法,回避系动词,serves as／stands as／marks／represents／boasts／features／offers 替代 is 或 has,S3+S14,可以,高
+10,en,句法,三段式滥用,把观点强凑成三个；升序三连；每 500 词超过 2 组即报警,S3+S5+S9,部分,中
+11,en,句法,假区间,from X to Y 两端不在同一尺度；一篇内 2+ 处且形容词对立,S3+S5,部分,中
+12,en,句法,关联连词滥用,not only...but also／whether...or／both...and／either...or,S5+S9,可以,高
+13,en,句法,平衡对冲跷跷板,While X has many benefits it is important to note that Y／On the one hand,S5,部分,中
+14,en,句法,同义词轮换,同一实体在一段内换用 4 个以上纯同义词（protagonist／main character／central figure／hero）,S3+S5,部分,低
+15,en,句法,句长均匀,AI 15-25 词每句且 SD 仅 2-3；判据 SD<4 可疑 人类 SD>6,S5+S9,可以,中
+16,en,句法,无生命物拟动,静态物件被写成坐落／延伸／拥抱（spatial copula）,S9,部分,中
+17,en,句法,三残句连发,三个单词成句连续出现,S9,可以,高
+18,en,句法,完美语法,零残句／零句首连词／零被打断的思路,S5+S9,部分,中
+19,en,语篇,元评论,In this section we will／As mentioned earlier／Let us now turn to／Before we proceed,S5+S4,可以,高
+20,en,语篇,复述式结论,结论中 60% 以上观点已在引言出现,S5,部分,低
+21,en,语篇,跑步机效应,连续三段可用同一句话概括,S5,很难,低
+22,en,语篇,段落等长与对称,段落普遍 3-5 句；各节词数变异系数低于 0.15,S5+S9,可以,中
+23,en,语篇,五段式作文,引言加三个等长主体加结论,S5+S9,部分,中
+24,en,语篇,套式挑战与展望段落,Despite its ... faces several challenges／Despite these challenges／Future Outlook,S3,可以,中
+25,en,语篇,通用人名,示例人名多为 Emily／Sarah 一类常见西文女性名（60-70% 未能证实）,S5,部分,低
+26,en,语篇,回避具体专名,用 a major study／experts say／a leading company 替代可查证的具体名称,S5,部分,中
+27,en,语篇,无元认知反思,从不出现我改主意了或我曾以为 X 但现在,S5,很难,低
+28,en,格式,破折号滥用,em dash 替代逗号／括号／冒号；每段 3+ 或每 100 词超过 1 个,S3+S5+S9,可以,高
+29,en,格式,粗体滥用,正文句中机械加粗关键词／产品名／缩写；每页 3+ 处,S3+S5+S9+S14,可以,高
+30,en,格式,行内标题式列表,要点以加粗标签加冒号开头且复述后文,S3+S5+S14,可以,高
+31,en,格式,标题 Title Case,标题中所有实词首字母大写,S3+S5+S14,可以,高
+32,en,格式,emoji 装饰,每个要点或标题对称配一个 emoji,S3+S5+S14,可以,高
+33,en,格式,弯引号,用弯引号与弯撇号而非直引号,S3+S5+S14,可以,高
+34,en,格式,冒号成瘾,句中用冒号当连接件而非引出列表,S9+S14,部分,中
+35,en,格式,分号回避,分号与冒号比例约 10:1 或更差（人类约 1:1）,S9,可以,中
+36,en,格式,箭头与加号连接散文,用箭头或 word + word 充当连词写散文,S9,可以,高
+37,en,格式,英美拼写一致,默认美式拼写 analyze／optimize／color,S5,部分,中
+38,en,结构,协作语残留,I hope this helps／Of course!／Certainly!／You are absolutely right／let me know／here is a,S3+S14,可以,高
+39,en,结构,知识截止免责,as of date／Up to my last training update／While specific details are limited,S3,可以,高
+40,en,结构,谄媚语气,Great question!／That is a really insightful observation／You are right to be concerned about,S3+S4,可以,高
+41,en,结构,假的认识论谦逊,I think it is fair to say／It could be argued that／While I am not an expert in X／This is a complex topic but,S4,可以,高
+42,en,结构,空洞正面结尾,The future looks bright／Exciting times lie ahead／a major step in the right direction,S3+S14,可以,高
+43,en,结构,结构过度解释,仅两个琐碎项的编号列表／复述简单想法的加粗标签／为一句话设嵌套小标题,S4,可以,高
+44,zh,用词,中文套话衔接词,首先／其次／最后／综上所述／总的来说／值得注意的是,S7+S10+S12,可以,高
+45,zh,用词,空洞总结套话,由此可见／不难看出／具有重要意义,S10,可以,高
+46,zh,用词,名词化动词,进行优化／实现突破／提供保障,S7,可以,高
+47,zh,用词,抽象主语,时代呼唤／科技赋能／市场选择,S7,可以,高
+48,zh,用词,金句收尾,这就是...的力量／未来可期,S7,可以,高
+49,zh,用词,假亲切,家人们／宝子们／谁懂啊,S7,可以,高
+50,zh,用词,意义拔高短语,具有里程碑式的意义／标志着...的新篇章／谱写了...的新华章,S7+S10,可以,高
+51,zh,用词,网文高频词,淬了毒／淬了冰／不容置喙；S13 实测发现纯词表清理后仍有明显 AI 痕迹,S13,部分,高
+52,zh,句法,排比三件套,不仅是...更是...／是...是...更是...,S7,可以,高
+53,zh,句法,译制腔句式甲,形容词加又加形容词 如 他显得滑稽又可笑,S13,可以,高
+54,zh,句法,译制腔句式乙,目光／眼神／视线像（修饰）的刀 狠狠扎在（人物）心上／刮过（人物）的,S13,可以,高
+55,zh,句法,译制腔句式丙,每一个字／句话 都像（修饰）,S13,可以,高
+56,zh,句法,译制腔句式丁,代词、人名、身份行动三者同位插入 如 他、张三、龙族太子,S13,可以,中
+57,zh,句法,译制腔句式戊,眼神里有 X 但更多的是 Y,S13,可以,高
+58,zh,句法,句长过于均衡,句子长度过于均衡 缺短句的铿锵与长句的绵密 属过度流畅的非自然语言,S10+S12,部分,中
+59,zh,句法,万能转折与并列,虽然...但是...式平衡句／不仅...而且...并列框架,S10+S12,可以,高
+60,zh,语篇,总分总八股,总-分-总／三段式／四段式模板敷衍成文,S7+S10+S12,部分,中
+61,zh,语篇,末尾不知收束,核心观点已讲完仍喋喋不休复述前文并强调其意义,S10,部分,低
+62,zh,语篇,证据越界,众筹金额写成市场验证／理论推演写成最终证明／法律条款写成风险被封锁,S7,很难,低
+63,zh,语篇,并列清单与标题膨胀,编号列表与标题数量异常膨胀（数字未能证实）,S11+S12,部分,中
+64,zh,语篇,升华腔,永远四平八稳／永远在升华／缺少一点脏和刺,S11+S12,部分,低
+65,zh,结构,适用体裁错配,在会议纪要／技术文档／行业报告等需要清晰与可检索的体裁里强行去味,S11+S12,很难,低
+66,both,结构,密度判据,单词出现无意义；按每 500 词计 0-2 干净／3-5 轻度／6-10 中度／11+ 重度重写,S4,可以,中
+67,both,结构,阈值缺口,中文侧一个阈值都没有；英文侧只有句长 SD 与 not-x-but-y 基线可引,S5+S6,部分,中
+68,both,结构,拒答立场,只报可解释的标记命中 不给出 AI 概率式结论（与 S8 作者自我限定一致）,S8,很难,低

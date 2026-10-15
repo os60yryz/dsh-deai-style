@@ -1,0 +1,7 @@
+```python
+def normalize(values):
+    total = sum(values)
+    return [v / total for v in values]
+```
+
+`normalize([1, 2, 3])`

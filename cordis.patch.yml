@@ -1,0 +1,11 @@
+# dsh-deai-style bundle patch
+# 只插入一行；所有行为都通过 config 控制。
+- insert:
+    - id: deai-style
+      name: dsh-deai-style
+      config:
+        enabled: true
+        level: strict
+        position: bottom
+        injectLintTool: true
+        extraRules: ""

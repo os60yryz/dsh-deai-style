@@ -1,0 +1,269 @@
+// dsh-deai-style 单元检查（node ESM）
+// 覆盖：规则库自检 / 检测器区分度与边界 / 提示词渲染 / 注册计划 / mock ctx 开关两套断言 / 工具执行
+// 用法：node tests/checks.mjs   （退出码 0 = 全 PASS）
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+import { RULES, METRICS, CATEGORY_LABELS } from "../lib/ruleset.js";
+import { lint, bandOf, stripCode, renderReport, BANDS } from "../lib/lint.js";
+import { renderPrompt, LEVELS } from "../lib/prompt.js";
+import { planRegistrations, normalizeConfig, SECTION_NAME, TOOL_NAME } from "../lib/plan.js";
+import { apply, inject, name as pluginName, Config } from "../index.js";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const fixture = (f) => readFileSync(join(here, "fixtures", f), "utf8");
+
+let pass = 0;
+let fail = 0;
+const lines = [];
+function check(label, ok, detail) {
+  if (ok) {
+    pass += 1;
+    lines.push(`PASS ${label}`);
+  } else {
+    fail += 1;
+    lines.push(`FAIL ${label}${detail === undefined ? "" : ` :: ${detail}`}`);
+  }
+}
+
+// ---------- 1. 规则库自检 ----------
+const ruleIds = RULES.map((r) => r.id);
+check("规则库条目 >= 25", RULES.length >= 25, RULES.length);
+check("规则 id 唯一", new Set(ruleIds).size === ruleIds.length);
+check(
+  "规则字段齐全",
+  RULES.every(
+    (r) =>
+      typeof r.id === "string" &&
+      CATEGORY_LABELS[r.cat] !== undefined &&
+      r.sev >= 1 &&
+      r.sev <= 3 &&
+      r.re instanceof RegExp &&
+      typeof r.hint === "string" &&
+      r.hint.length > 0,
+  ),
+);
+check("规则正则均带 g 标志", RULES.every((r) => r.re.flags.includes("g")));
+check(
+  "结构指标字段齐全",
+  METRICS.length >= 5 &&
+    METRICS.every((m) => typeof m.id === "string" && CATEGORY_LABELS[m.cat] !== undefined && m.sev >= 1 && m.sev <= 3 && typeof m.measure === "function"),
+);
+
+// ---------- 2. 检测器区分度 ----------
+const ai = fixture("ai_style_sample.txt");
+const human = fixture("human_style_sample.txt");
+const code = fixture("edge_code_only.txt");
+const aiR = lint(ai);
+const humanR = lint(human);
+const emptyR = lint("");
+const codeR = lint(code);
+const gap = aiR.score - humanR.score;
+const weightOf = (h) => h.sev * Math.min(h.count, 2);
+
+check(`AI 样例分数 >= 60（实际 ${aiR.score}）`, aiR.score >= 60);
+check(`人写样例分数 <= 15（实际 ${humanR.score}）`, humanR.score <= 15);
+check(`区分度 >= 45（实际 ${gap}）`, gap >= 45);
+check("空文本 = 0 分且无命中", emptyR.score === 0 && emptyR.hits.length === 0);
+check(`纯代码样例 <= 10 分（实际 ${codeR.score}）`, codeR.score <= 10);
+check("AI 样例命中加粗列表指纹", aiR.hits.some((h) => h.id === "bold-label-line"));
+check("AI 样例命中反转句", aiR.hits.some((h) => h.id === "not-x-but-y"));
+check("AI 样例命中客服结尾", aiR.hits.some((h) => h.id === "service-close"));
+check("AI 样例命中结构指标", aiR.hits.some((h) => h.kind === "metric"));
+check(`人写样例命中 <= 1 条（实际 ${humanR.hits.length}）`, humanR.hits.length <= 1);
+check("结果字段齐全", typeof aiR.band === "string" && typeof aiR.bandLabel === "string" && !!aiR.counts && !!aiR.byCategory && Array.isArray(aiR.suggestions));
+check("建议条数受 maxSuggestions 限制", lint(ai, { maxSuggestions: 2 }).suggestions.length <= 2);
+check("命中按加权严重度降序", aiR.hits.every((h, i) => i === 0 || weightOf(aiR.hits[i - 1]) >= weightOf(h)));
+check("分数为 0-100 整数", Number.isInteger(aiR.score) && aiR.score >= 0 && aiR.score <= 100);
+
+// ---------- 2b. 典型开场/结尾套话必须命中 ----------
+const openerCases = [
+  ["这是一个非常好的问题！", "platitude-open"],
+  ["好问题！我们先看数据。", "platitude-open"],
+  ["感谢你的提问。", "grateful-open"],
+  ["在当今这个快速发展的时代，", "era-opener"],
+  ["随着人工智能的发展，", "era-opener"],
+  ["如果还有其他问题，欢迎再来。", "service-close"],
+];
+for (const [sample, rid] of openerCases) {
+  check(`开场/结尾套话命中 ${rid} :: ${sample}`, lint(sample).hits.some((h) => h.id === rid));
+}
+check("正常句子不误伤 platitude-open", !lint("这个问题的答案取决于载荷。").hits.some((h) => h.id === "platitude-open"));
+check("正常句子不误伤 era-opener", !lint("他把车送去修了。").hits.some((h) => h.id === "era-opener"));
+
+// ---------- 3. 分档边界 ----------
+const bandCases = [
+  [0, "clean"],
+  [15, "clean"],
+  [16, "slight"],
+  [35, "slight"],
+  [36, "medium"],
+  [60, "medium"],
+  [61, "heavy"],
+  [100, "heavy"],
+];
+check("分档边界正确", bandCases.every(([s, k]) => bandOf(s).key === k));
+check("分档表 4 档", BANDS.length === 4);
+
+// ---------- 4. 代码剥离 ----------
+check("stripCode 去代码块", !stripCode(code).includes("def normalize"));
+check("stripCode 去行内代码", !stripCode('前 `x = 1` 后').includes("x = 1"));
+check("stripCode 对 null 安全", stripCode(null) === "");
+
+// ---------- 5. 报告渲染 ----------
+const aiReport = renderReport(aiR);
+const emptyReport = renderReport(emptyR);
+check("报告含评分", aiReport.includes(`${aiR.score}/100`));
+check("报告含命中明细", aiReport.includes("命中明细"));
+check("报告含改写建议", aiReport.includes("改写建议"));
+check("空结果报告写明未命中", emptyReport.includes("未命中任何规则"));
+check("报告为非空纯文本", typeof aiReport === "string" && aiReport.length > 80);
+
+// ---------- 6. 提示词渲染 ----------
+const offPrompt = renderPrompt({ level: "off" });
+const soft = renderPrompt({ level: "soft", toolName: null });
+const strict = renderPrompt({ level: "strict", toolName: TOOL_NAME });
+const strictNoTool = renderPrompt({ level: "strict", toolName: null });
+check("level=off 渲染为空串", offPrompt === "");
+check("strict 含核心约束", strict.includes("不用模板连接词") && strict.includes("不是X，而是Y"));
+check("soft 不含 strict 扩展", !soft.includes("自然段优先"));
+check("strict 含 strict 扩展", strict.includes("自然段优先"));
+check("soft 条款数少于 strict", soft.split("\n").length < strict.split("\n").length);
+check("toolName 生效时出现工具名", strict.includes(TOOL_NAME));
+check("toolName 为 null 时不出现工具名", !strictNoTool.includes(TOOL_NAME));
+check("extraRules 追加到末尾", renderPrompt({ level: "soft", extraRules: "少用感叹号。" }).trimEnd().endsWith("少用感叹号。"));
+check("空白 extraRules 不追加", !renderPrompt({ level: "soft", extraRules: "   " }).includes("补充要求"));
+check("LEVELS 三档", JSON.stringify(LEVELS) === JSON.stringify(["off", "soft", "strict"]));
+
+// ---------- 7. 注册计划 ----------
+const orderMap = { personaPrefix: 0, personaSuffix: 10200 };
+check(
+  "默认配置",
+  JSON.stringify(normalizeConfig(undefined)) === JSON.stringify({ enabled: true, level: "strict", position: "bottom", injectLintTool: true, extraRules: "" }),
+);
+check("非法 level 回落 strict", normalizeConfig({ level: "bogus" }).level === "strict");
+check("非法 position 回落 bottom", normalizeConfig({ position: "middle" }).position === "bottom");
+check("enabled:false -> null", planRegistrations({ enabled: false }, orderMap) === null);
+check("level:off -> null", planRegistrations({ level: "off" }, orderMap) === null);
+const planBottom = planRegistrations({}, orderMap);
+const planTop = planRegistrations({ position: "top" }, orderMap);
+check("默认挂在 persona suffix 之后", planBottom.section.order === 10201, planBottom.section.order);
+check("position=top 挂在 persona prefix 之后", planTop.section.order === 1, planTop.section.order);
+check("section 名固定为 deai:style", planBottom.section.name === SECTION_NAME && SECTION_NAME === "deai:style");
+check("section 文本非空", planBottom.section.text.length > 200, planBottom.section.text.length);
+check("injectLintTool:false 不注册工具", planRegistrations({ injectLintTool: false }, orderMap).tool === false);
+check("injectLintTool:false 文本不含工具名", !planRegistrations({ injectLintTool: false }, orderMap).section.text.includes(TOOL_NAME));
+
+// ---------- 8. 插件导出形状 ----------
+check("插件名 = deai-style", pluginName === "deai-style");
+check("inject 声明 systemPrompt/tools", JSON.stringify(inject) === JSON.stringify(["systemPrompt", "tools"]));
+check("apply 是函数", typeof apply === "function");
+check("Config 存在", Config !== undefined && Config !== null);
+let configOk = false;
+try {
+  const c = Config({});
+  configOk = c.level === "strict" && c.enabled === true && c.injectLintTool === true;
+} catch {
+  configOk = false;
+}
+check("Config 解析出默认值", configOk);
+
+// ---------- 9. mock ctx 开关两套断言 ----------
+function makeCtx() {
+  const calls = { effects: [], sections: [], tools: [] };
+  const orders = { DEPLOYMENT_PERSONA_PREFIX: 0, DEPLOYMENT_PERSONA_SUFFIX: 10200 };
+  const ctx = {
+    effect(cb, label) {
+      calls.effects.push(label);
+      const cleanup = cb();
+      return typeof cleanup === "function" ? cleanup : () => {};
+    },
+    systemPrompt: {
+      getSectionOrder(n) {
+        return orders[n] ?? 0;
+      },
+      section(s) {
+        calls.sections.push(s);
+        return () => {};
+      },
+    },
+    tools: {
+      register(t) {
+        calls.tools.push(t);
+        return () => {};
+      },
+    },
+  };
+  return { ctx, calls };
+}
+
+const onCase = makeCtx();
+apply(onCase.ctx, { enabled: true, level: "strict" });
+check("开：注册 1 个 section", onCase.calls.sections.length === 1, onCase.calls.sections.length);
+check("开：section 名 = deai:style", onCase.calls.sections[0]?.name === SECTION_NAME);
+check("开：section order = 10201", onCase.calls.sections[0]?.order === 10201, onCase.calls.sections[0]?.order);
+check("开：注册 1 个工具", onCase.calls.tools.length === 1, onCase.calls.tools.length);
+check("开：工具名 = deai_scan", onCase.calls.tools[0]?.name === TOOL_NAME);
+check("开：section 文本非空", (onCase.calls.sections[0]?.text ?? "").length > 200);
+check("开：effect 标签 2 个", onCase.calls.effects.length === 2, onCase.calls.effects.join(","));
+check("开：effect 标签含 section()", onCase.calls.effects.some((l) => String(l).includes("section")));
+check("开：effect 标签含 tool()", onCase.calls.effects.some((l) => String(l).includes("tool")));
+
+const offCase = makeCtx();
+apply(offCase.ctx, { enabled: false });
+check("关（enabled:false）：零注册", offCase.calls.effects.length === 0 && offCase.calls.sections.length === 0 && offCase.calls.tools.length === 0);
+
+const offCase2 = makeCtx();
+apply(offCase2.ctx, { level: "off" });
+check("关（level:off）：零注册", offCase2.calls.effects.length === 0 && offCase2.calls.sections.length === 0 && offCase2.calls.tools.length === 0);
+
+const softTop = makeCtx();
+apply(softTop.ctx, { level: "soft", position: "top", injectLintTool: false });
+check("soft+top：order = 1", softTop.calls.sections[0]?.order === 1);
+check("soft+top：不注册工具", softTop.calls.tools.length === 0);
+check("soft+top：文本无工具名", !(softTop.calls.sections[0]?.text ?? "").includes(TOOL_NAME));
+check("soft+top：文本含核心约束", (softTop.calls.sections[0]?.text ?? "").includes("不用模板连接词"));
+
+const noConfig = makeCtx();
+apply(noConfig.ctx, {});
+check("无 config：走默认（开）", noConfig.calls.sections.length === 1 && noConfig.calls.tools.length === 1);
+
+// ---------- 10. 工具执行端到端 ----------
+const scanTool = onCase.calls.tools[0];
+const toolOut = await scanTool.execute({ text: ai, maxSuggestions: 3 });
+const toolBlocks = scanTool.output.render({ text: ai }, toolOut);
+check("工具 execute 返回 lint 结果", typeof toolOut?.score === "number" && toolOut.band === aiR.band);
+check("工具 execute 尊重 maxSuggestions", toolOut.suggestions.length <= 3);
+check("工具 render 返回单个文本块", Array.isArray(toolBlocks) && toolBlocks.length === 1 && toolBlocks[0].type === "text");
+check("工具 render 文本含评分", String(toolBlocks[0]?.text ?? "").includes(`${toolOut.score}/100`));
+check("工具 description 非空", typeof scanTool.description === "string" && scanTool.description.length > 20);
+check(
+  "工具参数编译为 JSON Schema（text 必填）",
+  scanTool.parameters?.type === "object" && Array.isArray(scanTool.parameters?.required) && scanTool.parameters.required.includes("text"),
+);
+check("工具参数含 maxSuggestions（integer）", scanTool.parameters?.properties?.maxSuggestions?.type === "integer");
+
+// ---------- 11. 标定回归：区分强弱变体与补充规则 ----------
+// 背景：第一轮 A/B（6 样本）均值达标但逐条不达标，根因是检测器同时误报与漏报——
+// 把「不是X，是Y」这种正常汉语口语按 3 分罚（p5 只降到 45），却放过一整段典型 AI 科普腔（p2 只得 5 分）。
+// 以下断言把当时的标定结论锁死，防止后续改动悄悄回退。
+const fullForm = lint("这不是效率问题，而是组织能力的问题。");
+const liteForm = lint("戒不掉不是因为意志力差，是这东西本来就被造出来对付自控力的。");
+const explainer = lint("短视频难以戒掉，核心在于它精准击中了大脑的奖励机制。此外，算法会不断推送你感兴趣的内容。");
+const idsOf = (r) => r.hits.map((h) => h.id);
+
+check("标定：带「而是」的平行结构命中 not-x-but-y", idsOf(fullForm).includes("not-x-but-y"));
+check("标定：带「而是」不误命中 lite 变体", !idsOf(fullForm).includes("not-x-but-y-lite"));
+check("标定：不带「而是」的口语反转命中 lite 变体", idsOf(liteForm).includes("not-x-but-y-lite"));
+check("标定：不带「而是」不算强指纹", !idsOf(liteForm).includes("not-x-but-y"));
+check("标定：lite 变体严重度 = 1", liteForm.hits.find((h) => h.id === "not-x-but-y-lite")?.sev === 1);
+check("标定：强指纹评分高于口语变体", fullForm.score > liteForm.score, `${fullForm.score} vs ${liteForm.score}`);
+check("标定：explainer-frame 命中「核心在于」", idsOf(explainer).includes("explainer-frame"));
+check("标定：transition-cliche 命中「此外」", idsOf(explainer).includes("transition-cliche"));
+check("标定：AI 科普腔样例不再漏报", explainer.score >= 20, explainer.score);
+
+// ---------- 汇总 ----------
+for (const l of lines) console.log(l);
+console.log(`TOTAL pass=${pass} fail=${fail}`);
+process.exit(fail === 0 ? 0 : 1);

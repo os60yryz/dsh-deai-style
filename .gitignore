@@ -1,0 +1,9 @@
+# 开发用依赖（tests/setup_dev_links.ps1 创建的 junction，勿入库）
+node_modules/
+
+# 打包产物
+*.tgz
+
+# 临时目录
+tmp/
+*.log
