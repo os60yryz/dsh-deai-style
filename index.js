@@ -22,9 +22,7 @@ const Config = z.object({
 const scanTool = defineTool({
   name: TOOL_NAME,
   description:
-    "对一段中文草稿做「去 AI 风格」自检，返回 0-100 的 AI 腔评分、命中明细与改写建议。" +
-    "用来检查回答是否套用了模板连接词（首先/其次/综上所述）、对偶反转句（不是X而是Y）、" +
-    "「- **小标题**：内容」式列表、空洞夸饰词、客服式结尾等 AI 腔特征。只做诊断，不改写文本。",
+    "对一段中文草稿做去 AI 腔自检，返回 0-100 分、命中规则与改写建议。只诊断，不改写。",
   parameters: {
     text: {
       type: "string",
@@ -39,7 +37,7 @@ const scanTool = defineTool({
   output: {
     schema: { type: "object", additionalProperties: true },
     render(args, value) {
-      return [{ type: "text", text: renderReport(value) }];
+      return [{ type: "text", text: renderReport(value, { compact: true }) }];
     },
   },
   execute(args) {

@@ -529,6 +529,31 @@ check(
   lint("先说结论。后面再补过程。").hits.find((h) => h.id === "verdict-opener")?.sev === 1,
 );
 
+// ---------- 17. 开销门禁（2026-10-15 用户问「会不会翻倍消耗」） ----------
+// 实测口径见 tests/measure_plugin_cost.mjs：段 542 token + 工具 schema 330 token/请求。
+// 这里锁住三件容易悄悄膨胀的事：提示段长度、工具 schema 参数个数、报告形态。
+const strictPrompt = renderPrompt({ level: "strict", toolName: TOOL_NAME });
+check("17.1 strict 提示段不超过 900 字符", strictPrompt.length <= 900, `${strictPrompt.length} 字符`);
+check(
+  "17.2 deai_scan 参数不超过 2 个",
+  Object.keys(scanTool?.parameters?.properties ?? {}).length <= 2,
+  Object.keys(scanTool?.parameters?.properties ?? {}).join(","),
+);
+const bulky = lint("首先，这是非常好的问题。值得注意的是，远程办公极大地提升了效率。综上所述，希望对你有帮助。\n".repeat(6));
+const fullReport = renderReport(bulky);
+const smallReport = renderReport(bulky, { compact: true });
+check(
+  "17.3 工具返回精简报告（相对完整报告至少短 50%）",
+  smallReport.length <= fullReport.length * 0.5,
+  `${fullReport.length} -> ${smallReport.length}`,
+);
+check(
+  "17.4 精简报告仍带分数、命中与建议",
+  /评分/.test(smallReport) && /命中/.test(smallReport),
+  smallReport.split("\n")[0],
+);
+check("17.5 完整报告保留逐条样例（人类/CLI 用）", fullReport.includes("例：") || fullReport.includes("命中明细"));
+
 // ---------- 汇总 ----------
 for (const l of lines) console.log(l);
 console.log(`TOTAL pass=${pass} fail=${fail}`);
