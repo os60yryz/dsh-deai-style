@@ -372,7 +372,7 @@ check(
   "14.1 fmt 类规则全部标 evidence:format",
   RULES.filter((r) => r.cat === "fmt").every((r) => r.evidence === "format"),
 );
-check("14.2 数量门禁：正则规则 32 条", RULES.length === 32, RULES.length);
+check("14.2 数量门禁：正则规则 33 条", RULES.length === 33, RULES.length);
 check("14.3 数量门禁：指标 11 条", METRICS.length === 11, METRICS.length);
 check(
   "14.4 emoji-marker 是观察信号而非定罪证据",
@@ -513,6 +513,21 @@ check(
   ),
 );
 check("15.4 enumerate-all 仍抓穷举腔开场", lint("主要可以从以下几个方面说明。\n").hits.some((h) => h.id === "enumerate-all"));
+
+// ---------- 16. 下结论的密度（2026-10-15 用户反馈：AI 味是「每段都落到一个判断」） ----------
+// 55376 字我的输出里句首判断命中 4 次，32189 字真人中文 0 次；绝对频次低，sev 只给 1。
+check(
+  "16.1 句首判断命中 verdict-opener",
+  lint("真正有用的是改。这是过程。").hits.some((h) => h.id === "verdict-opener"),
+);
+check(
+  "16.2 句中出现的「真正」不算句首判断",
+  !lint("他说的真正意思我没听懂。").hits.some((h) => h.id === "verdict-opener"),
+);
+check(
+  "16.3 句首判断严重度为 1（低频，不作强证据）",
+  lint("先说结论。后面再补过程。").hits.find((h) => h.id === "verdict-opener")?.sev === 1,
+);
 
 // ---------- 汇总 ----------
 for (const l of lines) console.log(l);
