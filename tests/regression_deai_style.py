@@ -187,7 +187,7 @@ def check_unit():
     record("E1 node tests/checks.mjs 退出码 0", ok_exit, err.strip()[:300])
     record("E2 单元检查 fail=0（%s）" % (m.group(0) if m else "无 TOTAL 行"), ok_total)
     if m:
-        record("E3 单元检查用例数 >= 60（%s）" % m.group(1), int(m.group(1)) >= 60)
+        record("E3 单元检查用例数 >= 100（%s）" % m.group(1), int(m.group(1)) >= 100)
 
 
 # ---------------------------------------------------------------- F 开关两套断言

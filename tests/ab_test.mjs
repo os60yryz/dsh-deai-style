@@ -192,6 +192,7 @@ async function main() {
     if (pp.baselineMean >= HIGH_BAR) ok = pp.deaiMean < TARGET ? "是" : "**否**";
     console.log(`${pp.id} | ${b} | ${d} | ${diff} | ${ok}`);
   }
+  console.log("（逐条按均值比较；判定另含「逐样本达标率 ≥80%」，见下）");
 
   // ---------- 按用户确认的验收口径判定 ----------
   const verdict = { criteria: { minDropPct: MIN_DROP_PCT, target: TARGET, highBar: HIGH_BAR }, checks: [] };
@@ -214,6 +215,30 @@ async function main() {
       name: `基线高分样本（≥${HIGH_BAR}）全部降到 <${TARGET}`,
       ok: highFail.length === 0,
       detail: `高分样本 ${high.map((p) => p.id).join(",") || "无"}；未达标 ${highFail.map((p) => `${p.id}=${p.deaiMean.toFixed(1)}`).join(",") || "无"}`,
+    });
+    // 防止判据空过：若没有任何基线样本达到高分线，上面的口径会无条件通过。
+    verdict.checks.push({
+      name: `基线存在 ≥${HIGH_BAR} 的高分样本（否则判据空过）`,
+      ok: high.length > 0,
+      detail: high.length ? `${high.length} 题入选` : "无——本轮不构成有效证据",
+    });
+    // 逐样本（而非 3 轮均值）达标率：均值会把个别轮次的失守掩盖掉。
+    const pairRuns = [];
+    for (const p of PROMPTS) {
+      const bs = rows.filter((r) => r.prompt === p.id && r.condition === "baseline" && r.ok);
+      const ds = rows.filter((r) => r.prompt === p.id && r.condition === "deai" && r.ok);
+      if (!bs.length || !ds.length) continue;
+      const bm = bs.reduce((s, r) => s + r.lint.score, 0) / bs.length;
+      if (bm < HIGH_BAR) continue;
+      for (const r of ds) pairRuns.push({ id: p.id, score: r.lint.score });
+    }
+    const runPass = pairRuns.filter((r) => r.score < TARGET).length;
+    const runRate = pairRuns.length ? (runPass / pairRuns.length) * 100 : 0;
+    verdict.summary.runPassRate = `${runPass}/${pairRuns.length}`;
+    verdict.checks.push({
+      name: `逐样本达标率 ≥80%（每次运行都要 <${TARGET}）`,
+      ok: pairRuns.length > 0 && runRate >= 80,
+      detail: `${runPass}/${pairRuns.length}（${runRate.toFixed(0)}%）${pairRuns.filter((r) => r.score >= TARGET).map((r) => `${r.id}=${r.score}`).join(",") || ""}`,
     });
     verdict.pass = verdict.checks.every((c) => c.ok);
 

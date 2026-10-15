@@ -61,7 +61,7 @@ cd <本仓库>
 pnpm pack --pack-destination .\tmp          # tmp/ 已在 .gitignore
 ```
 ```
-plugin_manager action=install_bundle target="<本仓库>\tmp\dsh-deai-style-1.0.3.tgz"
+plugin_manager action=install_bundle target="<本仓库>\tmp\dsh-deai-style-1.1.0.tgz"
 ```
 
 - 卸载：`plugin_manager action=remove_bundle target="dsh-deai-style"`，重启后生效。
@@ -100,7 +100,8 @@ plugin_manager action=install_bundle target="<本仓库>\tmp\dsh-deai-style-1.0.
 ```powershell
 cd <本仓库>
 pwsh -File tests\setup_dev_links.ps1     # 期望 SETUP PASS
-node tests\checks.mjs                    # 结构 + 区分度 + 开关行为 + 标定回归，期望 TOTAL pass=95 fail=0
+node tests\checks.mjs                    # 结构 + 区分度 + 开关行为 + 标定回归 + 长度/性能，期望 TOTAL pass=103 fail=0
+node tests\corpus.mjs                    # 20 条标注语料（12 人写 ≤30 分 + 8 AI 腔 ≥40 分），期望 CORPUS pass=20 fail=0
 python tests\regression_deai_style.py    # 功能开关回归，期望 RESULT=PASS (35/35)
 
 # 效果验证（需要 DEEPSEEK_API_KEY，见 AGENTS.md §28 凭据注入）
@@ -109,11 +110,27 @@ node tests\ab_test.mjs --repeats 3       # 期望 VERDICT=PASS
 ```
 
 - `checks.mjs`：语法、无 BOM/LF、清单结构、规则库自检、检测器区分度（AI 样例 ≥70、人写样例 ≤20）、
-  开/关两套断言、`defineTool` 参数编译、工具 `execute`/`render`，以及**标定回归**（强/弱反转变体分离、
-  `explainer-frame` 命中、科普腔不再漏报）。
+  开/关两套断言、`defineTool` 参数编译、工具 `execute`/`render`，**标定回归**（强/弱反转变体分离、
+  `explainer-frame` 命中、科普腔不再漏报），以及**长度与性能**（同一 AI 样例 ×1/×2/×5/×20 均 ≥70 分且极差 ≤15、
+  10 万换行在 800ms 内完成、未闭合围栏被剥离、表格不再被删空）。后两组是 2026-10-16 按第一轮红蓝军意见补的。
+- `corpus.mjs`：`tests/corpus/{human_zh,ai_zh}.json` 里 20 条人工标注语料，只用 `lib/lint.js` 打分并比对
+  各自的 `max`/`min` 阈值。它是独立于规则标定过程的外部标尺，用来发现「改规则把尺子也改了」。
 - `regression_deai_style.py`：A–G 七组 35 项断言，含「关 = 旧行为」与边界（非法 level、`injectLintTool:false`）。
 - `ab_test.mjs`：6 题 × N 轮 × 两组，输出 `ab_result.json` 与逐条对照，并按验收口径（平均分下降 ≥50%、
-  基线 ≥35 分的题目全部 <35）自动打印 `VERDICT=PASS|FAIL`。可用 `--min-drop-pct` / `--target` / `--high-bar` 调整。
+  基线 ≥35 分的题目全部 <35、**逐样本达标率 ≥80%**）自动打印 `VERDICT=PASS|FAIL`。可用 `--min-drop-pct` /
+  `--target` / `--high-bar` 调整。
+
+## 红蓝军审查记录
+
+`docs/reviews/` 保存了三轮「质疑—优化—测试」的原始报告与返工记录：
+
+| 文件 | 内容 |
+|---|---|
+| `round1-red.md` | 第一轮红队攻击报告：12 条失守、14 条规则级缺陷、5 条设计级质疑 |
+| `round1-bug.md` | 第一轮代码级缺陷审计：7 条缺陷（含 O(n²) 正则与长文漏报） |
+| `round1-fix.md` | 第一轮的逐条处置、评分模型改动理由、刻意保留的边界 |
+
+已知边界与未解决问题汇总在 `docs/验收报告.md` 第八、九节。
 
 > ⚠️ 请勿对插件目录执行 `Get-ChildItem -Recurse`：开发用的 `node_modules\@deepseek-ai` 是 junction，
 > 其内部 `cordis → cordis-plugin-include → cordis` 会形成无限深的目录链（已两次因此卡住命令）。

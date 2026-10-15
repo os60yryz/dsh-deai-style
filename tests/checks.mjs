@@ -60,7 +60,7 @@ const humanR = lint(human);
 const emptyR = lint("");
 const codeR = lint(code);
 const gap = aiR.score - humanR.score;
-const weightOf = (h) => h.sev * Math.min(h.count, 2);
+const weightOf = (h) => h.sev * Math.min(h.count, 3);
 
 check(`AI 样例分数 >= 60（实际 ${aiR.score}）`, aiR.score >= 60);
 check(`人写样例分数 <= 15（实际 ${humanR.score}）`, humanR.score <= 15);
@@ -71,9 +71,12 @@ check("AI 样例命中加粗列表指纹", aiR.hits.some((h) => h.id === "bold-l
 check("AI 样例命中反转句", aiR.hits.some((h) => h.id === "not-x-but-y"));
 check("AI 样例命中客服结尾", aiR.hits.some((h) => h.id === "service-close"));
 check("AI 样例命中结构指标", aiR.hits.some((h) => h.kind === "metric"));
-check(`人写样例命中 <= 1 条（实际 ${humanR.hits.length}）`, humanR.hits.length <= 1);
+check(`人写样例命中 <= 1 条且低于 35 分（实际 ${humanR.hits.length} 条 / ${humanR.score} 分）`, humanR.hits.length <= 1 && humanR.score < 35);
 check("结果字段齐全", typeof aiR.band === "string" && typeof aiR.bandLabel === "string" && !!aiR.counts && !!aiR.byCategory && Array.isArray(aiR.suggestions));
-check("建议条数受 maxSuggestions 限制", lint(ai, { maxSuggestions: 2 }).suggestions.length <= 2);
+{
+  const limited = lint(ai, { maxSuggestions: 2 }).suggestions.length;
+  check(`建议条数受 maxSuggestions 限制（实际 ${limited}）`, limited >= 1 && limited <= 2);
+}
 check("命中按加权严重度降序", aiR.hits.every((h, i) => i === 0 || weightOf(aiR.hits[i - 1]) >= weightOf(h)));
 check("分数为 0-100 整数", Number.isInteger(aiR.score) && aiR.score >= 0 && aiR.score <= 100);
 
@@ -234,7 +237,7 @@ const scanTool = onCase.calls.tools[0];
 const toolOut = await scanTool.execute({ text: ai, maxSuggestions: 3 });
 const toolBlocks = scanTool.output.render({ text: ai }, toolOut);
 check("工具 execute 返回 lint 结果", typeof toolOut?.score === "number" && toolOut.band === aiR.band);
-check("工具 execute 尊重 maxSuggestions", toolOut.suggestions.length <= 3);
+check(`工具 execute 尊重 maxSuggestions（实际 ${toolOut.suggestions.length}）`, toolOut.suggestions.length >= 1 && toolOut.suggestions.length <= 3);
 check("工具 render 返回单个文本块", Array.isArray(toolBlocks) && toolBlocks.length === 1 && toolBlocks[0].type === "text");
 check("工具 render 文本含评分", String(toolBlocks[0]?.text ?? "").includes(`${toolOut.score}/100`));
 check("工具 description 非空", typeof scanTool.description === "string" && scanTool.description.length > 20);
@@ -262,6 +265,46 @@ check("标定：强指纹评分高于口语变体", fullForm.score > liteForm.sc
 check("标定：explainer-frame 命中「核心在于」", idsOf(explainer).includes("explainer-frame"));
 check("标定：transition-cliche 命中「此外」", idsOf(explainer).includes("transition-cliche"));
 check("标定：AI 科普腔样例不再漏报", explainer.score >= 20, explainer.score);
+
+// ---------- 12. 长度维度 / 性能 / 鲁棒性 ----------
+// 第一轮缺陷审计（docs/reviews/round1-bug.md）的 D1（性能）与 D2（长度单调漏报）：
+// 旧公式 hypothesis 下同一份 AI 样例 ×1=98 ×2=93 ×5=76 ×20=43，长文实际免检；
+// 旧的表格行正则 `^\s*\|.*\|\s*$` 会跨行回溯，10 万换行要 7 秒。
+const { stripCode: stripFn, renderReport: renderFn } = await import("../lib/lint.js");
+
+const aiOnce = lint(ai).score;
+const aiX2 = lint(ai.repeat(2)).score;
+const aiX5 = lint(ai.repeat(5)).score;
+const aiX20 = lint(ai.repeat(20)).score;
+const aiScores = [aiOnce, aiX2, aiX5, aiX20];
+check(
+  `长度不敏感：同一 AI 样例 ×1/×2/×5/×20 均 >=70（实际 ${aiScores.join("/")}）`,
+  aiScores.every((s) => s >= 70),
+);
+check(
+  `长度不敏感：极差 <=15（实际 ${Math.max(...aiScores) - Math.min(...aiScores)}）`,
+  Math.max(...aiScores) - Math.min(...aiScores) <= 15,
+);
+
+const t0 = performance.now();
+const floodScore = lint("\n".repeat(100000)).score;
+const floodMs = performance.now() - t0;
+check(`性能：10 万换行在 800ms 内完成（实际 ${floodMs.toFixed(0)}ms）`, floodMs < 800 && floodScore === 0);
+
+check("未闭合围栏的代码被剥离", !stripFn("```js\nconst secret = 1;\n").includes("secret"));
+check("闭合围栏的代码被剥离", !stripFn("```js\nconst secret = 1;\n```\n正文").includes("secret"));
+check("表格内容不再被整段删空", stripFn("| 方案 | 优点 |\n| --- | --- |\n| A | 快 |").includes("方案"));
+
+let renderThrew = false;
+try {
+  renderFn(undefined);
+  renderFn(null);
+  renderFn({});
+} catch {
+  renderThrew = true;
+}
+check("renderReport 对异常入参不抛错", !renderThrew);
+check("maxSuggestions 非法值被钳到 0 条", lint(ai, { maxSuggestions: -1 }).suggestions.length === 0);
 
 // ---------- 汇总 ----------
 for (const l of lines) console.log(l);

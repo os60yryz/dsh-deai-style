@@ -7,3 +7,7 @@ node_modules/
 # 临时目录
 tmp/
 *.log
+
+# 红蓝军探针的输出（脚本入库，产物不入库）
+tests/red1/out*.json
+tests/bug1/out*.json
