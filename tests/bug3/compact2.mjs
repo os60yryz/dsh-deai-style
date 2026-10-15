@@ -1,0 +1,12 @@
+import { readFileSync } from "node:fs";
+const o = JSON.parse(readFileSync(new URL("./probe2.out.txt", import.meta.url), "utf8"));
+console.log("nudgeJump(bullets,score,band,ruleWeight,metricWeight):");
+for (const r of o.nudgeJump) console.log(`  b=${r.bullets} h=${r.headings} cl=${r.contentLines} rw=${r.ruleWeight} mw=${r.metricWeight} -> ${r.score} ${r.band}`);
+console.log("heavyFormat:");
+for (const r of o.heavyFormat) console.log(`  cfg=${JSON.stringify(r.cfg)} chars=${r.chars} cl=${r.contentLines} rw=${r.ruleWeight} mw=${r.metricWeight} -> ${r.score} ${r.band} hits=${r.hits.join(" ")}`);
+console.log("analyzedEdge:");
+for (const r of o.analyzedEdge) console.log(`  pad=${r.pad} chars=${r.chars} analyzed=${r.analyzed} score=${r.score} ${r.band} | ${r.report}`);
+console.log("kCurve:", JSON.stringify(o.kCurve));
+console.log("bandOf:", JSON.stringify(o.bandOf));
+console.log("charsKou:", JSON.stringify(o.charsKou));
+console.log("maxSuggestions:", JSON.stringify(o.maxSuggestions));

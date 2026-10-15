@@ -8,7 +8,9 @@
 - 本机实测（6 题 × 3 轮 = 36 样本，`deepseek-flash`）：AI 腔平均分 **49.7 → 16.3（−67.2%）**，
   6 道题全部从「中等/明显 AI 腔」降到「轻微/基本没有」。数据与判定见
   [docs/验收报告.md](docs/验收报告.md)。
-- 规则库规模：**34 条正则规则 + 6 个统计指标**，分「用词／句法／语篇语用／格式／结构节奏」五类。
+- 规则库规模：**32 条正则规则 + 11 个统计指标**，分「用词／句法／语篇语用／格式／结构节奏」五类。
+  其中**排版类证据只作观察信号（上限 25 分），不参与定罪**——三轮红蓝军实测表明人类技术文档、
+  说明书、周报的加粗标签密度与 AI 回答完全重叠（见下方「能力边界」）。
 
 ## 它解决什么
 
@@ -41,7 +43,7 @@
 
 - **关（`enabled:false` 或 `level:"off"`）= 旧行为**：`apply()` 直接返回，不注册 section、不注册工具。
 - 非法 `level` 回退为 `strict`；缺省 config 全部走默认值。
-- `strict` 规则段 802 字符（10 条核心 + 6 条严格档）；`soft` 470 字符（仅核心 10 条）。
+- `strict` 规则段 802 字符（11 条核心 + 5 条严格档，不含工具提示行）；`soft` 612 字符（仅核心 11 条）。
 
 ## 安装
 
@@ -114,7 +116,7 @@ pnpm 仍会尊重 `package.json` 的 `files` 白名单，`docs/` 与 `tests/` �
 ```powershell
 cd <本仓库>
 pwsh -File tests\setup_dev_links.ps1     # 期望 SETUP PASS
-node tests\checks.mjs                    # 结构 + 区分度 + 开关行为 + 标定回归 + 长度/性能 + 红蓝军回归，期望 TOTAL pass=126 fail=0
+node tests\checks.mjs                    # 结构 + 区分度 + 开关行为 + 标定回归 + 长度/性能 + 红蓝军回归，期望 TOTAL pass=154 fail=0
 node tests\corpus.mjs                    # 20 条标注语料（12 人写 ≤30 分 + 8 AI 腔 ≥40 分），期望 CORPUS pass=20 fail=0
 python tests\regression_deai_style.py    # 功能开关回归，期望 RESULT=PASS (35/35)
 
@@ -129,7 +131,10 @@ node tests\ab_test.mjs --repeats 3       # 期望 VERDICT=PASS
   10 万换行在 800ms 内完成、未闭合围栏被剥离、表格不再被删空），以及**第二轮红蓝军回归** 21 项
   （`service-close` 裸「有」、纯排版受限出口、emoji 键帽与国旗、四反引号/`~~~` 围栏、半角键值对、
   零宽字符规避、黑话去重、重叠命中只算一次、opening 作用域不受前置换行影响、`analyzed` 字段、
-  报告自洽，以及用断言锁住三条「刻意不定罪」的排版边界）。
+  报告自洽，以及用断言锁住三条「刻意不定罪」的排版边界），以及**第三轮红蓝军回归** 28 项
+  （排版证据必须全部标 `evidence:"format"`、规则/指标数量门禁、`formatNudge` 阈值与封顶、
+  节奏加成上限、`k` 的长度归一化、9 字强信号稿的 `analyzed`、CRLF 表格、引用块围栏、
+  四空格缩进代码、跨行行内代码、抽象名词复读只计一次、卡片禁令进核心档）。
 - `corpus.mjs`：`tests/corpus/{human_zh,ai_zh}.json` 里 20 条人工标注语料，只用 `lib/lint.js` 打分并比对
   各自的 `max`/`min` 阈值。它是独立于规则标定过程的外部标尺，用来发现「改规则把尺子也改了」。
 - `regression_deai_style.py`：A–G 七组 35 项断言，含「关 = 旧行为」与边界（非法 level、`injectLintTool:false`）。
@@ -149,17 +154,29 @@ node tests\ab_test.mjs --repeats 3       # 期望 VERDICT=PASS
 | `round2-red.md` | 第二轮红队报告：12 条失守（5 误报 / 4 漏报 / 3 口径）+ 9 组未打穿 |
 | `round2-bug.md` | 第二轮代码级缺陷审计：7 类缺陷 + 测试可信度（断言对分数不敏感） |
 | `round2-fix.md` | 第二轮的逐条处置、**为什么「纯排版」不能单独定罪**（含 AI/人类排版权重重叠数据） |
+| `round3-red.md` | 第三轮红队报告：11 条失守（3 误报 / 3 漏报 / 4 口径 / 1 测试可信度）+ 7 组未打穿 |
+| `round3-bug.md` | 第三轮缺陷审计：11 条缺陷（高 2）+ 17 组变异测试（7 条零覆盖路径） |
+| `round3-fix.md` | 第三轮的逐条处置、文档与实现不一致的根因、**排版证据全面降为观察档**的决定与代价 |
 
-探针脚本已入库：`tests/red1/`、`tests/bug1/`、`tests/red2/`、`tests/bug2/`（产物由 `.gitignore` 排除）。
+探针脚本已入库：`tests/red1/`、`tests/bug1/`、`tests/red2/`、`tests/bug2/`；
+变异测试台在 `tmp/mut3/run_mutations.py`（8 组变异，全部被断言杀死）。
 
 ### 一条重要的能力边界
 
 **排版工整本身不是定罪证据。** 第二轮实测的排版权重里，AI 样本（纯列表 3.7 / 纯表格 4.0 / emoji 5.33）
 与人类样本（干净清单 5.34 / 工作日志 4.0 / 会议纪要 2.0）完全重叠，所以「只有排版、没有任何语言套话」的回答
-只会得到一个 ≤25 分的观察分，不会进「中等 AI 腔」。卡片的落点是：**排版是观察信号，用词与句式才是定罪证据。**
+只会得到一个 ≤25 分的观察分，不会进「中等 AI 腔」。
+
+第三轮把这条原则落到了实现：`cat:"fmt"` 的五条正则规则（`bold-label-line`、`bold-start-line`、
+`bold-heading`、`bold-inline-label`、`arrow-symbol`）原先**仍然直接计入定罪权重**——两条 `**注意**：`
+就能把 31 字人写说明顶到 60 分，人类技术文档 1/2/3 条加粗标签 = 29/47/61 分、说明书 2/4 条 = 52/75 分。
+现在它们与 `card-ratio`（「整篇几乎只剩卡片行」）一起只进 `formatWeight`，由 `checks.mjs` 的
+14.1 断言锁死。代价明确：**纯排版的 AI 回答（如 `tests/corpus/ai_zh.json` 的 A4）属于刻意不定罪区，
+只给 25 分观察分**——因为人类说明书、产品简介、技术文档与它在结构上不可分。
+
 同理，DSH 的 `agent/assistant-stream` 是只读事件，插件**无法**改写助手已生成的文本——它是提示 + 自检，不是强制过滤器。
 
-已知边界与未解决问题汇总在 `docs/验收报告.md` 第八、九节。
+已知边界与未解决问题汇总在 `docs/验收报告.md` 第八、九、十一节。
 
 > ⚠️ 请勿对插件目录执行 `Get-ChildItem -Recurse`：开发用的 `node_modules\@deepseek-ai` 是 junction，
 > 其内部 `cordis → cordis-plugin-include → cordis` 会形成无限深的目录链（已两次因此卡住命令）。

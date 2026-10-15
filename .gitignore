@@ -16,3 +16,10 @@ tests/red2/*.out.json
 tests/bug2/*.out.json
 tests/bug2/mut_result.json
 tests/bug2/mut/summary.json
+tests/red3/out*.json
+tests/red3/mut/
+tests/bug3/*.out.txt
+tests/bug3/mut_result.json
+tests/bug3/mut2_result.json
+tests/bug3/mut/
+tests/bug3/mut2/

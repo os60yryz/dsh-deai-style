@@ -77,7 +77,10 @@ check("结果字段齐全", typeof aiR.band === "string" && typeof aiR.bandLabel
   const limited = lint(ai, { maxSuggestions: 2 }).suggestions.length;
   check(`建议条数受 maxSuggestions 限制（实际 ${limited}）`, limited >= 1 && limited <= 2);
 }
-check("命中按加权严重度降序", aiR.hits.every((h, i) => i === 0 || weightOf(aiR.hits[i - 1]) >= weightOf(h)));
+check(
+  "命中按加权严重度降序（同档内）",
+  aiR.hits.filter((h) => h.tier !== "format").every((h, i, arr) => i === 0 || weightOf(arr[i - 1]) >= weightOf(h)),
+);
 check("分数为 0-100 整数", Number.isInteger(aiR.score) && aiR.score >= 0 && aiR.score <= 100);
 
 // ---------- 2b. 典型开场/结尾套话必须命中 ----------
@@ -319,8 +322,8 @@ check(`纯排版封顶 25，永不进「中等」档（实际 ${outlineOnly.scor
 const humanSteps = lint("- 把灯泡拧下来\n- 换上新的\n- 装回灯罩\n");
 check(`人类步骤清单不被排版定罪（实际 ${humanSteps.score}）`, humanSteps.score <= 15);
 // 13.3 第二轮 FP2-01/FN2-03：emoji 两头都错（人类日志被定罪、键帽与国旗检测不到）
-check("emoji 识别键帽 1️⃣", lint("1️⃣ 第一点\n2️⃣ 第二点\n3️⃣ 第三点\n").metricWeight > 0);
-check("emoji 识别区域指示符 🇨🇳", lint("🇨🇳 中国\n🇺🇸 美国\n").metricWeight > 0);
+check("emoji 识别键帽 1️⃣", lint("1️⃣ 第一点\n2️⃣ 第二点\n3️⃣ 第三点\n").formatWeight > 0);
+check("emoji 识别区域指示符 🇨🇳", lint("🇨🇳 中国\n🇺🇸 美国\n").formatWeight > 0);
 check(`行首 emoji 不再单独定罪（人类工作日志，实际 ${lint("✅ 修好了\n🔥 明天继续\n📌 记得同步\n").score}）`, lint("✅ 修好了\n🔥 明天继续\n📌 记得同步\n").score <= 15);
 // 13.4 第二轮 BUG2-01/02：四反引号与 ~~~ 围栏泄漏
 check("~~~ 围栏被剥离", !stripCode("~~~\n综上所述，感谢大家的阅读。\n~~~\n").includes("综上所述"));
@@ -359,6 +362,141 @@ const zeroReport = renderReport({
 });
 check("0 分报告的命中标为「未计分观察」", zeroReport.includes("未计分观察"));
 check("renderReport 钳位异常分数", renderReport({ score: 1e9, chars: 10, analyzed: true }).includes("100/100"));
+
+// ---------- 14. 第三轮红蓝军回归（v1.3.0） ----------
+// 这一组专门用来「杀死」第三轮缺陷审计里存活的变异体：
+// 第二轮新增的 formatNudge 阈值/封顶、metricBonus 的门与上限、k 的长度项、
+// scope 的坐标基准、analyzed 阈值、emoji 证据档、uplift-close 的裸「希望」。
+// 14.1 排版不定罪：所有 cat==="fmt" 的规则都必须显式标 evidence:"format"
+check(
+  "14.1 fmt 类规则全部标 evidence:format",
+  RULES.filter((r) => r.cat === "fmt").every((r) => r.evidence === "format"),
+);
+check("14.2 数量门禁：正则规则 32 条", RULES.length === 32, RULES.length);
+check("14.3 数量门禁：指标 11 条", METRICS.length === 11, METRICS.length);
+check(
+  "14.4 emoji-marker 是观察信号而非定罪证据",
+  METRICS.find((m) => m.id === "emoji-marker")?.evidence === "format",
+);
+check("14.5 card-ratio 是观察信号", METRICS.find((m) => m.id === "card-ratio")?.evidence === "format");
+
+// 14.2 变异杀伤：formatNudge 阈值 5、封顶 25、metricBonus 的门与上限
+const tinyFormat = lint("这是一段普通的话，说的是今天的事。\n**注意**：别忘了带伞。\n就这样。");
+check(
+  "14.6 少量排版不加分（阈值 5 生效）",
+  tinyFormat.formatWeight > 0 && tinyFormat.formatWeight < 5 && tinyFormat.score === 0,
+  `fw=${tinyFormat.formatWeight} score=${tinyFormat.score}`,
+);
+const cardOnly = lint(
+  "- **效率**：节省通勤时间。\n- **成本**：省下办公室租金。\n- **协作**：需要配合工具。\n- **文化**：依赖团队信任。\n- **管理**：考核方式要调整。\n- **招聘**：范围可以放宽。",
+);
+check(
+  "14.7 纯排版回答封顶 25 分（cap 生效）",
+  cardOnly.ruleWeight === 0 && cardOnly.score > 0 && cardOnly.score <= 25,
+  `score=${cardOnly.score}`,
+);
+const uniformR = lint("今天的天气还算不错，我们决定下午去附近的公园走一走。".repeat(12));
+check(
+  "14.8 节奏指标不能单独定罪（门 + 上限 4）",
+  uniformR.ruleWeight === 0 && uniformR.score === 0,
+  `rw=${uniformR.ruleWeight} score=${uniformR.score}`,
+);
+check(
+  "14.9 卡片格式只进 formatWeight",
+  lint("- **甲**：内容一。\n- **乙**：内容二。").ruleWeight === 0,
+);
+
+// 14.3 第三轮 H1：analyzed 不能把 9 字强信号稿判成「无正文」
+const shortStrong = lint("希望对你有帮助。");
+const shortReport = renderReport(shortStrong);
+check("14.10 9 字强信号稿 analyzed=true", shortStrong.analyzed === true && shortStrong.chars > 0);
+check(
+  "14.11 9 字强信号稿仍给出命中明细与改写建议",
+  shortReport.includes("命中明细") && shortReport.includes("改写建议"),
+  shortReport.split("\n")[0],
+);
+check("14.12 bandOf(NaN) 不落到 heavy", bandOf(Number.NaN).key === "clean");
+check("14.13 renderReport 保留「观察/定罪」标注", renderReport(lint("- **甲**：内容一。\n- **乙**：内容二。三点水四点水五点钟。")).includes("[观察]"));
+
+// 14.4 长度维度（变异 mut09：k 的长度项）
+const aiBlock =
+  "这是一个非常好的问题！首先，值得注意的是，远程办公能提升效率。其次，它降低了通勤成本。综上所述，希望对你有帮助。";
+const aiBlock5 = lint([aiBlock, aiBlock, aiBlock, aiBlock, aiBlock].join("\n"));
+const aiBlock1 = lint(aiBlock);
+check(
+  "14.14 同密度重复 5 倍后分数不塌",
+  aiBlock1.score >= 60 && aiBlock5.score >= 60 && Math.abs(aiBlock5.score - aiBlock1.score) <= 15,
+  `${aiBlock1.score} -> ${aiBlock5.score}`,
+);
+
+// 14.5 scope 用原始下标（变异 mut05：换成去空白字数就会错位）
+check(
+  "14.15 前置空行不影响开场作用域",
+  lint(`${"\n".repeat(100)}这是一个非常好的问题。后面是正文内容，随便写点字凑长度。`).hits.some(
+    (h) => h.id === "platitude-open",
+  ),
+);
+
+// 14.6 stripCode 第三轮残余：CRLF 表格、引用块围栏、四空格缩进代码、跨行行内代码
+check(
+  "14.16 CRLF 表格仍被识别为表格",
+  lint("| 项目 | 说明 |\r\n| --- | --- |\r\n| A | B |\r\n").counts.tableLines === 3,
+);
+check("14.17 引用块内的围栏被剥离", !stripCode("> ```\n> const x = 1;\n> ```\n正文在这里").includes("const"));
+check("14.18 四空格缩进代码块被剥离", !stripCode("    const x = 1;\n正常句子在这里").includes("const"));
+check("14.19 跨行行内代码被剥离", !stripCode("前面`跨\n行`后面").includes("跨"));
+check("14.20 嵌套列表项不被当代码删掉", stripCode("    - 子项内容").includes("子项内容"));
+
+// 14.7 第三轮 FN3-01/FN3-02：service-close 两个变体 + uplift-close 裸「希望」不得复活
+check("14.21 service-close 抓「以上就是我的回答」", lint("以上就是我的回答。").ruleWeight > 0);
+check(
+  "14.22 service-close 抓「希望这些内容对你有帮助」",
+  lint("希望这些内容对你有帮助。").ruleWeight > 0,
+);
+check(
+  "14.23 uplift-close 不抓裸「希望你能喜欢」（结尾作用域内也不抓）",
+  !lint("前面把事情的经过、来龙去脉、细节和我的判断都写得清清楚楚了，最后希望你能喜欢这篇文章。").hits.some(
+    (h) => h.id === "uplift-close",
+  ),
+);
+
+// 14.8 术语去重（第三轮 FP3-02：abstract-noun-stack 复读刷分）
+const repeatTerm = lint("维度上、维度上、维度上、维度上、维度上，说的其实是同一件事。");
+check(
+  "14.24 抽象名词复读只计一次",
+  repeatTerm.hits.find((h) => h.id === "abstract-noun-stack")?.count === 1,
+  repeatTerm.hits.find((h) => h.id === "abstract-noun-stack")?.count,
+);
+
+// 14.9 第三轮 REP3-04：卡片禁令必须进核心档（soft 也能拿到）
+check(
+  "14.25 soft 档也含卡片结构禁令",
+  renderPrompt({ level: "soft" }).includes("卡片式结构"),
+);
+check("14.26 soft 档编号项不再少一条", (renderPrompt({ level: "soft" }).match(/^\d+\. /gm) || []).length === 11);
+check("14.27 strict 档含 16 条编号项", (renderPrompt({ level: "strict" }).match(/^\d+\. /gm) || []).length === 16);
+
+// 14.10 节奏权重很大但定罪很轻时，分数必须被「封顶 4」和「长度归一化」双双压住。
+// 这条能同时杀死两个变异体：metricBonus 上限 4 -> 40（会变成 22 分）、
+// k 去掉长度项（会变成 24 分）；现状 16 分。
+const rhythmPara = "每天早上去公园走半小时，回来路上买点菜，下午看看书，晚上早点睡——日子就这么慢慢过去。";
+const rhythmHeavy = lint(
+  [
+    rhythmPara,
+    rhythmPara,
+    `值得一提的是，${rhythmPara}`,
+    rhythmPara,
+    rhythmPara,
+    rhythmPara,
+    rhythmPara,
+    rhythmPara,
+  ].join("\n\n"),
+);
+check(
+  "14.28 节奏重、定罪轻时不上分",
+  rhythmHeavy.ruleWeight === 1 && rhythmHeavy.rhythmWeight >= 8 && rhythmHeavy.score <= 18,
+  `rw=${rhythmHeavy.ruleWeight} rhythm=${rhythmHeavy.rhythmWeight} score=${rhythmHeavy.score}`,
+);
 
 // ---------- 汇总 ----------
 for (const l of lines) console.log(l);
