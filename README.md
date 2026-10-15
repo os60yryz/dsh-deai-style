@@ -5,8 +5,10 @@
 把「去 AI 腔」风格约束注入系统提示，并提供一个 `deai_scan` 打分工具，让模型能检查自己刚写的回答
 是不是又套上了模板连接词、对偶反转句、加粗小标题列表、空洞夸饰和客服式结尾。
 
-- 本机实测（6 题 × 3 轮 = 36 样本，`deepseek-flash`）：AI 腔平均分 **49.7 → 16.3（−67.2%）**，
-  6 道题全部从「中等/明显 AI 腔」降到「轻微/基本没有」。数据与判定见
+- 本机实测（6 题 × 3 轮 = 36 样本，`deepseek-flash`）：AI 腔平均分 **49.7 → 16.3（−67.2%）**；
+  第三轮返工后重跑为 **33.4 → 9.1（−72.8%）**，6 道题全部从「中等/明显 AI 腔」降到「轻微/基本没有」。
+  另有一项**提示词绕过测试**：4 条明确要求「分点列表」的题，注入组产出 **0** 个
+  `- **小标题**：` 卡片行（基线 29 个），均分 31.8 → 7.5。数据与判定见
   [docs/验收报告.md](docs/验收报告.md)。
 - 规则库规模：**32 条正则规则 + 11 个统计指标**，分「用词／句法／语篇语用／格式／结构节奏」五类。
   其中**排版类证据只作观察信号（上限 25 分），不参与定罪**——三轮红蓝军实测表明人类技术文档、
@@ -122,7 +124,8 @@ python tests\regression_deai_style.py    # 功能开关回归，期望 RESULT=PA
 
 # 效果验证（需要 DEEPSEEK_API_KEY，见 AGENTS.md §28 凭据注入）
 $env:DEEPSEEK_API_KEY = [Environment]::GetEnvironmentVariable('DEEPSEEK_API_KEY','User')
-node tests\ab_test.mjs --repeats 3       # 期望 VERDICT=PASS
+node tests\ab_test.mjs --repeats 3       # 6 题 × 3 轮 × 2 组，期望 VERDICT=PASS（v1.3.0 实测 −72.8%）
+node tests\bypass_test.mjs              # 用户明令「分点列表」时是否守得住，期望 VERDICT=PASS（实测卡片行 29 → 0）
 ```
 
 - `checks.mjs`：语法、无 BOM/LF、清单结构、规则库自检、检测器区分度（AI 样例 ≥70、人写样例 ≤20）、
