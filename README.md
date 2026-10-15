@@ -152,6 +152,9 @@ node tests\rewrite_eval.mjs D:\path\my_messages.json --top 6   # 拿真实回复
 - `corpus.mjs`：`tests/corpus/{human_zh,ai_zh}.json` 里 20 条人工标注语料，只用 `lib/lint.js` 打分并比对
   各自的 `max`/`min` 阈值。它是独立于规则标定过程的外部标尺，用来发现「改规则把尺子也改了」。
 - `regression_deai_style.py`：A–G 七组 35 项断言，含「关 = 旧行为」与边界（非法 level、`injectLintTool:false`）。
+- `measure_plugin_cost.mjs`：量插件每次请求多花多少 token（对照前缀 + `usage.prompt_tokens`），
+  以及工具调用一次的往返开销。结论：固定 872 token/请求（段 542 + 工具 schema 330），
+  折算进缓存后约占有效输入的 0.62%，见 [docs/reviews/plugin-cost.md](docs/reviews/plugin-cost.md)。
 - `ab_test.mjs`：6 题 × N 轮 × 两组，输出 `ab_result.json` 与逐条对照，并按验收口径（平均分下降 ≥50%、
   基线 ≥35 分的题目全部 <35、**逐样本达标率 ≥80%**）自动打印 `VERDICT=PASS|FAIL`。可用 `--min-drop-pct` /
   `--target` / `--high-bar` 调整。
