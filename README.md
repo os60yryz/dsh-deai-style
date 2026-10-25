@@ -28,6 +28,7 @@
 | --- | --- | --- |
 | 系统提示 section | `deai:style` | `order = getSectionOrder("DEPLOYMENT_PERSONA_SUFFIX") + 1`（默认 10201，即全提示词最末层） |
 | 工具 | `deai_scan` | 全局工具注册表 |
+| 命令行 | `deai` | `tools/deai.mjs`，不注册进宿主，`scan` / `fix` 两个子命令 |
 
 ## 配置
 
@@ -45,7 +46,34 @@
 
 - **关（`enabled:false` 或 `level:"off"`）= 旧行为**：`apply()` 直接返回，不注册 section、不注册工具。
 - 非法 `level` 回退为 `strict`；缺省 config 全部走默认值。
-- `strict` 规则段 802 字符（11 条核心 + 5 条严格档，不含工具提示行）；`soft` 612 字符（仅核心 11 条）。
+- `strict` 规则段 834 字符（11 条核心 + 6 条严格档，不含工具提示行）；`soft` 592 字符（仅核心 11 条）。
+
+## 给一段文字去 AI 腔
+
+三条路，按需选。
+
+**一、直接在会话里让我做。** 把文字贴过来，说「扫一下」或「改一遍」。我会调 `deai_scan` 打分（本地、不花钱），需要改写时按输出策略重写再复扫。不需要额外命令。
+
+**二、命令行只打分（本地，不调 API）。**
+
+```powershell
+cd <本仓库>
+node tools\deai.mjs scan draft.md            # 人读报告：分数、命中明细、排版体检
+node tools\deai.mjs scan draft.md --json     # 原始 JSON，给脚本用
+Get-Content draft.md -Raw | node tools\deai.mjs scan -   # 从管道读
+```
+
+**三、命令行改写（调 `deepseek-flash`，需要 key）。**
+
+```powershell
+$env:DEEPSEEK_API_KEY = [Environment]::GetEnvironmentVariable('DEEPSEEK_API_KEY','User')
+node tools\deai.mjs fix draft.md --out clean.md
+```
+
+改写指令取自 `lib/rewrite.js`（八条，与 `tests/rewrite_eval.mjs` 用同一份）。超过 3000 字自动按段落切块分发。跑完在 stderr 打一行 `分数 A -> B`，正文写进 `--out` 指定的文件；不给 `--out` 就打到 stdout。
+
+`scan` 不联网、不需要 key；`fix` 缺 key 会直接退出并打印注入命令（DSH 工具壳会把 `DEEPSEEK_API_KEY` 擦掉，必须显式注入）。
+
 
 ## 安装
 

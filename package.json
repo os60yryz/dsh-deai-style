@@ -1,17 +1,22 @@
 {
   "name": "dsh-deai-style",
-  "version": "1.4.4",
+  "version": "1.5.0",
   "type": "module",
-  "description": "DeepSeek 专属「去 AI 风格」插件：注入去 AI 腔表达约束，并提供 deai_scan 打分自检工具",
+  "description": "DeepSeek 专属「去 AI 风格」插件：注入去 AI 腔表达约束，并提供 deai_scan 打分自检工具与 deai 命令行",
   "main": "index.js",
+  "bin": {
+    "deai": "./tools/deai.mjs"
+  },
   "exports": {
     ".": "./index.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./tools/deai.mjs": "./tools/deai.mjs"
   },
   "files": [
     "index.js",
     "lib",
+    "tools",
     "cordis.patch.yml",
     "README.md"
   ],
