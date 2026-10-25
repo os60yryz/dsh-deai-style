@@ -118,7 +118,7 @@ pnpm 仍会尊重 `package.json` 的 `files` 白名单，`docs/` 与 `tests/` �
 ```powershell
 cd <本仓库>
 pwsh -File tests\setup_dev_links.ps1     # 期望 SETUP PASS
-node tests\checks.mjs                    # 结构 + 区分度 + 开关行为 + 标定回归 + 长度/性能 + 三轮红蓝军回归 + 外部校验回归，期望 TOTAL pass=158 fail=0
+node tests\checks.mjs                    # 结构 + 区分度 + 开关行为 + 标定回归 + 长度/性能 + 三轮红蓝军回归 + 外部校验回归，期望 TOTAL pass=167 fail=0
 node tests\corpus.mjs                    # 20 条标注语料（12 人写 ≤30 分 + 8 AI 腔 ≥40 分），期望 CORPUS pass=20 fail=0
 python tests\regression_deai_style.py    # 功能开关回归，期望 RESULT=PASS (35/35)
 

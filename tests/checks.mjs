@@ -474,7 +474,13 @@ check(
   renderPrompt({ level: "soft" }).includes("卡片式结构"),
 );
 check("14.26 soft 档编号项不再少一条", (renderPrompt({ level: "soft" }).match(/^\d+\. /gm) || []).length === 11);
-check("14.27 strict 档含 16 条编号项", (renderPrompt({ level: "strict" }).match(/^\d+\. /gm) || []).length === 16);
+check("14.27 strict 档含 17 条编号项", (renderPrompt({ level: "strict" }).match(/^\d+\. /gm) || []).length === 17);
+// 2026-10-25：用户指出第一人称是明显特征。实测同一批输入只加这一条改写指令，
+// 「我」14 -> 1、均分 28.2 -> 7.3，所以固化进 strict 档，并锁住文案不回退。
+check(
+  "14.29 strict 档含第一人称主语约束",
+  renderPrompt({ level: "strict" }).includes("不拿「我」当主语讲自己做了什么"),
+);
 
 // 14.10 节奏权重很大但定罪很轻时，分数必须被「封顶 4」和「长度归一化」双双压住。
 // 这条能同时杀死两个变异体：metricBonus 上限 4 -> 40（会变成 22 分）、
