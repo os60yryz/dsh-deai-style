@@ -372,7 +372,7 @@ check(
   "14.1 fmt 类规则全部标 evidence:format",
   RULES.filter((r) => r.cat === "fmt").every((r) => r.evidence === "format"),
 );
-check("14.2 数量门禁：正则规则 33 条", RULES.length === 33, RULES.length);
+check("14.2 数量门禁：正则规则 34 条", RULES.length === 34, RULES.length);
 check("14.3 数量门禁：指标 11 条", METRICS.length === 11, METRICS.length);
 check(
   "14.4 emoji-marker 是观察信号而非定罪证据",
@@ -559,6 +559,39 @@ check(
   smallReport.split("\n")[0],
 );
 check("17.5 完整报告保留逐条样例（人类/CLI 用）", fullReport.includes("例：") || fullReport.includes("命中明细"));
+
+// ---------- 18. 第一人称动作叙述（2026-10-25 用户反馈：AI 爱说「我把 X 拆成三块」） ----------
+// 提示段第 17 条约束了写法，但检测器原先完全看不见这类句子，自检形同虚设。
+// 实测口径见 docs/reviews/output-strategy.md 第九节。
+const fpDense = "我把这件事拆解成三个方面来分析。我做了不少实验，我把数据量了一遍，我来把结论说清楚。";
+const fpDenseR = lint(fpDense);
+check(
+  "18.1 成串的第一人称动作叙述被定罪",
+  fpDenseR.hits.some((h) => h.id === "first-person-narration") && fpDenseR.score >= 36,
+  `score=${fpDenseR.score}`,
+);
+check(
+  "18.2 单次「我把 score 改成 0」不定罪（minHits 门槛）",
+  !lint("我把 score 改成恒 0。").hits.some((h) => h.id === "first-person-narration"),
+);
+check(
+  "18.3 「我们」不算第一人称叙述",
+  !lint("我们把这套流程重排了一遍，我们做了三件事，我们又把结果核对了一遍。").hits.some(
+    (h) => h.id === "first-person-narration",
+  ),
+);
+check(
+  "18.4 「把握/把关/把手」不误报",
+  !lint("我把控制权交给你，把握分寸就行；把关的事你来做，把手抬高一点。").hits.some(
+    (h) => h.id === "first-person-narration",
+  ),
+);
+check(
+  "18.5 真人聊天式「我看了两遍」不误报",
+  !lint("这片子我看了两遍。第一遍觉得闷，第二遍才看出味道来。").hits.some(
+    (h) => h.id === "first-person-narration",
+  ),
+);
 
 // ---------- 汇总 ----------
 for (const l of lines) console.log(l);
