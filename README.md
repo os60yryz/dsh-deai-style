@@ -10,7 +10,7 @@
   另有一项**提示词绕过测试**：4 条明确要求「分点列表」的题，注入组产出 **0** 个
   `- **小标题**：` 卡片行（基线 29 个），均分 31.8 → 7.5。数据与判定见
   [docs/验收报告.md](docs/验收报告.md)。
-- 规则库规模：**32 条正则规则 + 11 个统计指标**，分「用词／句法／语篇语用／格式／结构节奏」五类。
+- 规则库规模：**34 条正则规则 + 12 个统计指标**，分「用词／句法／语篇语用／格式／结构节奏」五类。
   其中**排版类证据只作观察信号（上限 25 分），不参与定罪**——三轮红蓝军实测表明人类技术文档、
   说明书、周报的加粗标签密度与 AI 回答完全重叠（见下方「能力边界」）。
 
@@ -46,7 +46,7 @@
 
 - **关（`enabled:false` 或 `level:"off"`）= 旧行为**：`apply()` 直接返回，不注册 section、不注册工具。
 - 非法 `level` 回退为 `strict`；缺省 config 全部走默认值。
-- `strict` 规则段 834 字符（11 条核心 + 6 条严格档，不含工具提示行）；`soft` 592 字符（仅核心 11 条）。
+- `strict` 规则段 893 字符（11 条核心 + 7 条严格档，不含工具提示行）；`soft` 592 字符（仅核心 11 条）。
 
 ## 给一段文字去 AI 腔
 
@@ -146,7 +146,7 @@ pnpm 仍会尊重 `package.json` 的 `files` 白名单，`docs/` 与 `tests/` �
 ```powershell
 cd <本仓库>
 pwsh -File tests\setup_dev_links.ps1     # 期望 SETUP PASS
-node tests\checks.mjs                    # 结构 + 区分度 + 开关行为 + 标定回归 + 长度/性能 + 三轮红蓝军回归 + 外部校验回归，期望 TOTAL pass=172 fail=0
+node tests\checks.mjs                    # 结构 + 区分度 + 开关行为 + 标定回归 + 长度/性能 + 三轮红蓝军回归 + 外部校验回归，期望 TOTAL pass=177 fail=0
 node tests\corpus.mjs                    # 21 条标注语料（12 人写 ≤30 分 + 9 AI 腔 ≥40 分），期望 CORPUS pass=21 fail=0
 python tests\regression_deai_style.py    # 功能开关回归，期望 RESULT=PASS (35/35)
 
@@ -172,6 +172,8 @@ node tests\rewrite_eval.mjs D:\path\my_messages.json --top 6   # 拿真实回复
 - `external_validate.mjs`：给任意目录下的文章打分并汇总，用来做**外部标尺**——拿 2022 年前（ChatGPT
   之前）的真人文章检验误报，见 [docs/reviews/external-validation.md](docs/reviews/external-validation.md)。
 - `score_my_output.mjs`：给会话记录里助手写过的正文打分，用来检查**我自己**的输出。
+- `calibrate_structure.py`：把候选结构/修辞指标铺到五套语料上，先看真人分布再决定写不写规则
+  （`rhetoric-pileup` 就是从这里筛出来的，同时否掉了 7 条看起来很像但量下来没区分度的指标）。
 - `style_ab.mjs`：两组提示词的对照实验，指标取自 `lint().layout`（箭头密度、加粗密度、行首加粗标签、
   卡片行、偏密标记）。三轮实测结论是**往提示词里加文风规则量不出稳定效果**，记在
   [docs/reviews/output-strategy.md](docs/reviews/output-strategy.md)。
@@ -204,6 +206,7 @@ node tests\rewrite_eval.mjs D:\path\my_messages.json --top 6   # 拿真实回复
 | `round3-fix.md` | 第三轮的逐条处置、文档与实现不一致的根因、**排版证据全面降为观察档**的决定与代价 |
 | `external-validation.md` | 外部校验：15 篇 2022 年前真人文章 0 篇越线；两处误报已修；**我自己的输出排版层面仍很 AI** |
 | `output-strategy.md` | 针对「我自己怎么写」的优化：64 条自有正文的体检、提示词路线被否的三轮实验、定稿的七条改写策略与收敛判据 |
+| `rhetoric-calibration.md` | 修辞堆砌（把过程写成有脾气/会缴械的角色）的标定：真人语料上限 4.3%，样例 22%，所以这条允许单独定罪 |
 
 探针脚本已入库：`tests/red1/`、`tests/bug1/`、`tests/red2/`、`tests/bug2/`；
 变异测试台在 `tmp/mut3/run_mutations.py`（8 组变异，全部被断言杀死）。
@@ -222,6 +225,18 @@ node tests\rewrite_eval.mjs D:\path\my_messages.json --top 6   # 拿真实回复
 只给 25 分观察分**——因为人类说明书、产品简介、技术文档与它在结构上不可分。
 
 同理，DSH 的 `agent/assistant-stream` 是只读事件，插件**无法**改写助手已生成的文本——它是提示 + 自检，不是强制过滤器。
+
+### 为什么修辞堆砌可以定罪、排版不能
+
+排版不可定罪是因为**量到了重叠**：人类说明书、周报、技术文档与 AI 回答在加粗/卡片/列表密度上没有差别。
+修辞堆砌走的是另一条路——**量到了上限**：`rhetoric-pileup` 在 2022 年前真人文章 13 篇上最高 0%，
+在知识库 183 篇真人语料上最高 4.3%（多为「像…一样」的明喻，词表刻意不收），而目标样例是 22%。
+差 5 倍以上，且中间没有重叠带，所以它进 `strong` 档、可以单独把一篇 3300 字的文章从 11 分推到 40 分。
+标定数据与逐篇命中见 `docs/reviews/rhetoric-calibration.md`。
+
+这条规则同时踩了两个刹车：整篇少于 12 句不做统计（占比在短文本上是噪声）、命中少于 5 句不算
+（写文章用一两个比喻是正常汉语）。真人语料、`corpus` 的 12 条人写样本与我自己的 64 条历史输出
+在这条规则上都是 0 命中。
 
 已知边界与未解决问题汇总在 `docs/验收报告.md` 第八、九、十一节。
 

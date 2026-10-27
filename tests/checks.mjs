@@ -373,7 +373,7 @@ check(
   RULES.filter((r) => r.cat === "fmt").every((r) => r.evidence === "format"),
 );
 check("14.2 数量门禁：正则规则 34 条", RULES.length === 34, RULES.length);
-check("14.3 数量门禁：指标 11 条", METRICS.length === 11, METRICS.length);
+check("14.3 数量门禁：指标 12 条", METRICS.length === 12, METRICS.length);
 check(
   "14.4 emoji-marker 是观察信号而非定罪证据",
   METRICS.find((m) => m.id === "emoji-marker")?.evidence === "format",
@@ -474,7 +474,7 @@ check(
   renderPrompt({ level: "soft" }).includes("卡片式结构"),
 );
 check("14.26 soft 档编号项不再少一条", (renderPrompt({ level: "soft" }).match(/^\d+\. /gm) || []).length === 11);
-check("14.27 strict 档含 17 条编号项", (renderPrompt({ level: "strict" }).match(/^\d+\. /gm) || []).length === 17);
+check("14.27 strict 档含 18 条编号项", (renderPrompt({ level: "strict" }).match(/^\d+\. /gm) || []).length === 18);
 // 2026-10-25：用户指出第一人称是明显特征。实测同一批输入只加这一条改写指令，
 // 「我」14 -> 1、均分 28.2 -> 7.3，所以固化进 strict 档，并锁住文案不回退。
 check(
@@ -538,8 +538,8 @@ check(
 // ---------- 17. 开销门禁（2026-10-15 用户问「会不会翻倍消耗」） ----------
 // 实测口径见 tests/measure_plugin_cost.mjs：段 542 token + 工具 schema 330 token/请求。
 // 这里锁住三件容易悄悄膨胀的事：提示段长度、工具 schema 参数个数、报告形态。
-const strictPrompt = renderPrompt({ level: "strict", toolName: TOOL_NAME });
-check("17.1 strict 提示段不超过 900 字符", strictPrompt.length <= 900, `${strictPrompt.length} 字符`);
+const strictPrompt = renderPrompt({ level: "strict" }); // 不含工具提示行，与 README 口径一致
+check("17.1 strict 规则段不超过 900 字符", strictPrompt.length <= 900, `${strictPrompt.length} 字符`);
 check(
   "17.2 deai_scan 参数不超过 2 个",
   Object.keys(scanTool?.parameters?.properties ?? {}).length <= 2,
@@ -591,6 +591,63 @@ check(
   !lint("这片子我看了两遍。第一遍觉得闷，第二遍才看出味道来。").hits.some(
     (h) => h.id === "first-person-narration",
   ),
+);
+
+// ---------- 19. 拟人化修辞堆砌（2026-10-27 用户拿草木灰科普文章做案例） ----------
+// 标定：真人语料（2022 前 13 篇 + 知识库 183 篇抽样）该指标最高 4.3%，样例 22%，差 5 倍以上。
+// 见 docs/reviews/rhetoric-calibration.md。
+const rhetDense = [
+  "老辈人的办法简单粗暴，把灶台里的灰掏出来淋水，衣服泡进去搓两把，油污当场缴械。",
+  "古人不知道什么叫复分解反应，硬是靠着一次次断供的窘境，把这套流程玩成了军工手艺。",
+  "生石灰是出了名的暴脾气，沾水就炸，水分子钻进晶格，这口热就是车间开工的信号。",
+  "碳酸根被钙离子整编制打包带走，溶液里只剩下钾离子和氢氧根相依为命。",
+  "强碱液敞着口放，二氧化碳一点点溶进去，跟氢氧化钾重新结合，强碱偷偷变回弱碱。",
+  "古人不懂碳循环，但他们懂盖盖子，木板上缸隔绝空气，守住这缸碱等于守住半座被服厂。",
+  "最后泼一盆冷水，强碱不是善茬，pH13 的溶液对皮肤是实打实的腐蚀。",
+  "草木灰的正确打开方式是让它待在历史里发光，或者待在肥皂厂里打工。",
+  "加少了钙离子不够，碳酸根沉淀不干净，强碱转化稀稀拉拉，柔皮都嫌软。",
+  "加多了也不行，多出来的钙离子平时没事，碱液一上锅熬煮就和氢氧根勾搭成氢氧化钙。",
+  "温度也有坑，氢氧化钙这东西脾气怪，别的大多数固体越热溶得越多，它偏偏反过来。",
+  "第三个坑最阴，来自空气，辛辛苦苦苛化出来的强碱偷偷变回弱碱。",
+  "动物油脂和氢氧化钾混合加热，脂肪酸抓住钾离子，去污力拉满，专门伺候油腻的军装。",
+  "钾肥皂则偏软甚至能保持膏状，油脂遇碱当场现形，钾钠一字之差，肥皂的性格就翻了个面。",
+].join("");
+const rhetR = lint(rhetDense);
+check(
+  "19.1 修辞句成串（拟人化把过程写成人）被定罪",
+  rhetR.hits.some((h) => h.id === "rhetoric-pileup") && rhetR.score >= 36,
+  `score=${rhetR.score}`,
+);
+const plainSameTopic = [
+  "草木灰的主要成分是碳酸钾，溶于水后呈弱碱性，可以用于洗涤。",
+  "把草木灰装进筐里淋水，滤出的碱液含碳酸钾，能皂化油脂。",
+  "加入石灰后，钙离子与碳酸根生成沉淀，溶液中剩下氢氧化钾。",
+  "氢氧化钾是强碱，pH 约为 13，对皮肤有腐蚀性，操作需要防护。",
+  "溶液敞口放置会吸收空气中的二氧化碳，部分氢氧化钾变回碳酸钾。",
+  "古代军营用这套方法就地生产洗涤剂，原料是草木灰、贝壳和清水。",
+].join("");
+check(
+  "19.2 同样的知识、不用拟人化，不定罪",
+  !lint(plainSameTopic).hits.some((h) => h.id === "rhetoric-pileup"),
+  `score=${lint(plainSameTopic).score}`,
+);
+check(
+  "19.3 短文本不触发（句子少于 8 句时不做统计）",
+  !lint("生石灰是出了名的暴脾气，沾水就炸。碳酸根和钙离子抱成一团。").hits.some(
+    (h) => h.id === "rhetoric-pileup",
+  ),
+);
+check(
+  "19.4 单个比喻不定罪（阈值 0.5 倍以下直接归零）",
+  !lint(
+    "本文讨论古代制碱。草木灰溶于水呈碱性。加入石灰可以提高碱性。反应生成氢氧化钾。温度会影响反应速度。敞口放置会吸收二氧化碳。原料主要是草木灰和贝壳。整套流程可以在军营完成。整个过程需要十多道工序。生石灰则是出了名的暴脾气。",
+  ).hits.some((h) => h.id === "rhetoric-pileup"),
+);
+check(
+  "19.5 真人常用的「像…一样」明喻不进词表",
+  !lint(
+    "深圳的天气像蒸笼一样闷。地铁里的人像沙丁鱼一样挤。办公室像菜市场一样吵。下班的路像蜗牛一样慢。楼下的摊主像老熟人一样招呼。菜市场的鱼像刚上岸一样新鲜。出租车像脱缰的野马一样冲。雨下得像漏了一样。",
+  ).hits.some((h) => h.id === "rhetoric-pileup"),
 );
 
 // ---------- 汇总 ----------

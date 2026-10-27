@@ -23,3 +23,4 @@ tests/bug3/mut_result.json
 tests/bug3/mut2_result.json
 tests/bug3/mut/
 tests/bug3/mut2/
+__pycache__/
