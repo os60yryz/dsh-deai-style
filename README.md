@@ -1,34 +1,58 @@
-# dsh-deai-style（DeepSeek 专属「去 AI 风格」插件）
+# dsh-deai-style
+
+DeepSeek Harness 的「去 AI 腔」插件。往系统提示里注入一份风格约束，再给模型一个 `deai_scan` 工具，
+让它能检查自己刚写的东西有没有套上模板连接词、对偶反转句、加粗小标题列表、空洞夸饰和客服式结尾。
 
 仓库：https://github.com/os60yryz/dsh-deai-style
-
-把「去 AI 腔」风格约束注入系统提示，并提供一个 `deai_scan` 打分工具，让模型能检查自己刚写的回答
-是不是又套上了模板连接词、对偶反转句、加粗小标题列表、空洞夸饰和客服式结尾。
-
-- 本机实测（6 题 × 3 轮 = 36 样本，`deepseek-flash`）：AI 腔平均分 **49.7 → 16.3（−67.2%）**；
-  第三轮返工后重跑为 **33.4 → 9.1（−72.8%）**，6 道题全部从「中等/明显 AI 腔」降到「轻微/基本没有」。
-  另有一项**提示词绕过测试**：4 条明确要求「分点列表」的题，注入组产出 **0** 个
-  `- **小标题**：` 卡片行（基线 29 个），均分 31.8 → 7.5。数据与判定见
-  [docs/验收报告.md](docs/验收报告.md)。
-- 规则库规模：**34 条正则规则 + 12 个统计指标**，分「用词／句法／语篇语用／格式／结构节奏」五类。
-  其中**排版类证据只作观察信号（上限 25 分），不参与定罪**——三轮红蓝军实测表明人类技术文档、
-  说明书、周报的加粗标签密度与 AI 回答完全重叠（见下方「能力边界」）。
+当前版本：1.5.1
 
 ## 它解决什么
 
-详见 [docs/AI语言范式分析.md](docs/AI语言范式分析.md)。一句话：默认的书面语习惯（对齐训练 + 高分回答模板）
-在人类日常交流里极少出现，密集出现时读者会立刻感到「这是 AI 写的」。本插件把这份「黑名单 + 正向要求」
-作为同一层系统提示注入，并给出可量化的自检手段。
+默认的书面语习惯——对齐训练加上高分回答模板——在人类日常交流里很少出现。密集出现时，读者几乎
+立刻能感到「这是 AI 写的」。插件把一份黑名单和对应的正向要求作为同一层系统提示注入，并给出可量化
+的自检手段。
 
-外部研究综述见 [docs/研究现状.md](docs/研究现状.md)，中英标记对照见 [docs/标记总表.csv](docs/标记总表.csv)。
+规则库是 34 条正则规则加 12 个统计指标，分「用词 / 句法 / 语篇语用 / 格式 / 结构节奏」五类。
+排版类证据只作观察信号，不参与定罪，理由见下方「能力边界」。
+
+效果：6 题 × 3 轮共 36 个样本，模型 `deepseek-flash`，AI 腔均分 49.7 → 16.3（−67.2%）；第三轮
+返工后重跑 33.4 → 9.1（−72.8%），6 道题全部从「中等 / 明显 AI 腔」降到「轻微 / 基本没有」。
+另外做了一组提示词绕过测试：4 条明确要求「分点列表」的题，注入组产出 0 个 `- **小标题**：` 卡片行
+（基线 29 个），均分 31.8 → 7.5。数据与判定见 [docs/验收报告.md](docs/验收报告.md)。
 
 ## 注册内容
 
 | 类型 | 名称 | 位置 |
 | --- | --- | --- |
-| 系统提示 section | `deai:style` | `order = getSectionOrder("DEPLOYMENT_PERSONA_SUFFIX") + 1`（默认 10201，即全提示词最末层） |
+| 系统提示 section | `deai:style` | `order = getSectionOrder("DEPLOYMENT_PERSONA_SUFFIX") + 1`（默认 10201，全提示词最末层） |
 | 工具 | `deai_scan` | 全局工具注册表 |
-| 命令行 | `deai` | `tools/deai.mjs`，不注册进宿主，`scan` / `fix` 两个子命令 |
+| 命令行 | `deai` | `tools/deai.mjs`，不注册进宿主，有 `scan` 与 `fix` 两个子命令 |
+
+## 安装
+
+在 DeepSeek Harness 里装一次，重启宿主后生效：
+
+```
+plugin_manager action=install_bundle target="github:os60yryz/dsh-deai-style"
+```
+
+返回 `"application": "restart-required"` 表示入口已解析成功，需要完全退出桌面应用再打开，
+关窗口不算。
+
+宿主解析 `github:` 规格时可能连不上 github.com。这时改用仓库的压缩包地址，钉住 commit
+反而更可复现：
+
+```
+plugin_manager action=install_bundle target="https://codeload.github.com/os60yryz/dsh-deai-style/tar.gz/<commit-sha>"
+```
+
+它同样是「从 GitHub 安装」，升级就换 `<commit-sha>`。pnpm 会按 `package.json` 的 `files`
+白名单取文件，`docs/` 与 `tests/` 不会进 profile。
+
+不要用插件目录（`link:`）安装。`link:` 是符号链接，Node 按真实路径解析模块，够不到宿主的
+`node_modules`，加载时会报 `failed to import`。原因与排查过程见 [docs/验收报告.md](docs/验收报告.md) 第六节。
+
+卸载：`plugin_manager action=remove_bundle target="dsh-deai-style"`。
 
 ## 配置
 
@@ -44,82 +68,96 @@
         extraRules: ""       # 追加到提示词末尾的自定义要求
 ```
 
-- **关（`enabled:false` 或 `level:"off"`）= 旧行为**：`apply()` 直接返回，不注册 section、不注册工具。
-- 非法 `level` 回退为 `strict`；缺省 config 全部走默认值。
-- `strict` 规则段 893 字符（11 条核心 + 7 条严格档，不含工具提示行）；`soft` 592 字符（仅核心 11 条）。
+`enabled:false` 或 `level:"off"` 时 `apply()` 直接返回，不注册 section、不注册工具，也就是
+完全回到没装插件的样子。非法 `level` 回退为 `strict`，缺省 config 全部走默认值。
 
-## 给一段文字去 AI 腔
+`strict` 规则段 893 字符，11 条核心约束加 7 条严格档，不含工具提示行；`soft` 592 字符，只有核心 11 条。
 
-三条路，按需选。
+## 使用
 
-**一、直接在会话里让我做。** 把文字贴过来，说「扫一下」或「改一遍」。我会调 `deai_scan` 打分（本地、不花钱），需要改写时按输出策略重写再复扫。不需要额外命令。
+直接在会话里说「扫一下」或「改一遍」，模型会调 `deai_scan` 打分（本地运行，不花钱），需要改写时
+按输出策略重写再复扫。
 
-**二、命令行只打分（本地，不调 API）。**
-
-```powershell
-cd <本仓库>
-node tools\deai.mjs scan draft.md            # 人读报告：分数、命中明细、排版体检
-node tools\deai.mjs scan draft.md --json     # 原始 JSON，给脚本用
-Get-Content draft.md -Raw | node tools\deai.mjs scan -   # 从管道读
-```
-
-**三、命令行改写（调 `deepseek-flash`，需要 key）。**
+命令行只打分，同样本地、不联网：
 
 ```powershell
-$env:DEEPSEEK_API_KEY = [Environment]::GetEnvironmentVariable('DEEPSEEK_API_KEY','User')
-node tools\deai.mjs fix draft.md --out clean.md
+node tools/deai.mjs scan draft.md            # 人读报告：分数、命中明细、排版体检
+node tools/deai.mjs scan draft.md --json     # 原始 JSON，给脚本用
+Get-Content draft.md -Raw | node tools/deai.mjs scan -   # 从管道读
 ```
 
-改写指令取自 `lib/rewrite.js`（八条，与 `tests/rewrite_eval.mjs` 用同一份）。超过 3000 字自动按段落切块分发。跑完在 stderr 打一行 `分数 A -> B`，正文写进 `--out` 指定的文件；不给 `--out` 就打到 stdout。
-
-`scan` 不联网、不需要 key；`fix` 缺 key 会直接退出并打印注入命令（DSH 工具壳会把 `DEEPSEEK_API_KEY` 擦掉，必须显式注入）。
-
-
-## 安装
-
-装进 DSH profile，首选直接从 GitHub 拉：
-
-```
-plugin_manager action=install_bundle target="github:os60yryz/dsh-deai-style"
-```
-
-pnpm 会以 codeload 上的仓库 tarball 解出一份**真实目录**。返回 `"application":"restart-required"`
-表示入口已解析成功，**重启宿主**（完全退出 DSH 桌面应用再打开，不是关窗口）后生效。
-
-本地改动想立刻装，用 tarball，效果等价（同样是真实目录）：
+命令行改写，调 `deepseek-flash`，需要 API key：
 
 ```powershell
-cd <本仓库>
-pnpm pack --pack-destination .\tmp          # tmp/ 已在 .gitignore
-```
-```
-plugin_manager action=install_bundle target="<本仓库>\tmp\dsh-deai-style-1.2.0.tgz"
+$env:DEEPSEEK_API_KEY = "sk-..."
+node tools/deai.mjs fix draft.md --out clean.md
 ```
 
-- 卸载：`plugin_manager action=remove_bundle target="dsh-deai-style"`，重启后生效。
-- 本机目标 profile 是 **desktop**（Electron 应用独占管理，`dsh --profile desktop --dump-config` 不可用）。
+改写指令取自 `lib/rewrite.js`，与 `tests/rewrite_eval.mjs` 共用同一份。超过 3000 字会自动按段落
+切块分发，跑完在 stderr 打一行 `分数 A -> B`，正文写进 `--out` 指定的文件，不给 `--out` 就打 stdout。
 
-### 当 `github:` 安装报连接超时
+## 评分
 
-`install_bundle` 在解析 `github:` 规格前会先做一次 **5 秒**的 `github.com` 连通性探测。本机网络下
-`github.com` 的 HTTPS 经常连不上（实测 20 秒超时），而 `codeload.github.com` 正常（约 4 秒），
-于是 `github:` 规格会稳定报 `dsh: connection to github.com timed out after 5000ms`（`failedAt: spec-host`），
-**即使 `git push` / `git ls-remote` 能正常工作**。此时改用 codeload 的固定 commit 压缩包地址即可：
+先按规则汇总权重（`sev × min(count, 2)`，重叠命中只算一次），再用饱和曲线转成分数：
 
 ```
-plugin_manager action=install_bundle target="https://codeload.github.com/os60yryz/dsh-deai-style/tar.gz/<commit-sha>"
+k = 4.5 + 字符数 / 100
+分数 = 100 × (1 − e^(−权重 / k))
 ```
 
-它同样是「从 GitHub 安装」，而且因为钉住 commit 反而更可复现；要升级就换 `<commit-sha>`。
-pnpm 仍会尊重 `package.json` 的 `files` 白名单，`docs/` 与 `tests/` 不会进 profile。
+权重为 0 时，只剩排版证据最多给 25 分观察分，节奏类指标最多再加 4 分。分档：≤15 基本没有 AI 腔，
+≤35 轻微，≤60 中等，其余为明显。长度归一化写进 `k` 里，同一篇文章放大 20 倍分数不变。
 
-### 不要用插件目录（`link:`）安装
+## 能力边界
 
-实测以目录安装时宿主报 `deai-style (dsh-deai-style): failed to import`、`application = failed`：
-`link:` 是符号链接，Node 按真实路径解析模块，够不到 profile 的 `node_modules`。原因与修复过程见
-[docs/验收报告.md](docs/验收报告.md) 第六节。
+排版工整本身不是定罪证据。第二轮实测的排版权重里，AI 样本（纯列表 3.7 / 纯表格 4.0 / emoji 5.33）
+与人类样本（干净清单 5.34 / 工作日志 4.0 / 会议纪要 2.0）完全重叠，所以「只有排版、没有任何语言套话」
+的回答只会拿到 ≤25 分的观察分，不会进「中等 AI 腔」。
 
-### 打包前的必备字段（踩过的坑）
+第三轮把这条原则落到了实现：五条 `cat:"fmt"` 的正则规则原先仍然直接计入定罪权重，两条 `**注意**：`
+就能把 31 字的人写说明顶到 60 分；人类技术文档 1/2/3 条加粗标签分别是 29/47/61 分，说明书 2/4 条
+是 52/75 分。现在它们与 `card-ratio` 一起只进 `formatWeight`，由 `checks.mjs` 的 14.1 断言锁死。
+代价明确：纯排版的 AI 回答（`tests/corpus/ai_zh.json` 的 A4）属于刻意不定罪区，只给 25 分观察分，
+因为人类说明书、产品简介、技术文档与它在结构上不可分。
+
+修辞堆砌走的是另一条路——量到了上限。`rhetoric-pileup` 在 13 篇 2022 年前真人文章上最高 0%，
+在 183 篇真人语料上最高 4.3%（多为「像…一样」的明喻，词表刻意不收），而用于标定的样例是 22%。
+差 5 倍以上，中间没有重叠带，所以它进 `strong` 档，可以单独把一篇 3300 字的文章从 11 分推到 40 分。
+这条规则同时有两个限制：整篇少于 12 句不做统计，命中少于 5 句不算。标定数据与逐篇命中见
+[docs/reviews/rhetoric-calibration.md](docs/reviews/rhetoric-calibration.md)。
+
+还有一条结构性限制：DSH 的 `agent/assistant-stream` 是只读事件，插件无法改写助手已经生成的文本。
+它是提示加自检，不是强制过滤器。
+
+## 测试
+
+```powershell
+pwsh -File tests/setup_dev_links.ps1     # 把宿主里的 peer 包链接进 node_modules，期望 SETUP PASS
+node tests/checks.mjs                    # 结构、区分度、开关行为、标定、性能、红蓝军回归，期望 pass=177 fail=0
+node tests/corpus.mjs                    # 21 条人工标注语料，期望 pass=21 fail=0
+python tests/regression_deai_style.py    # 功能开关回归，期望 RESULT=PASS（35/35）
+```
+
+需要 API key 的效果验证：
+
+```powershell
+$env:DEEPSEEK_API_KEY = "sk-..."
+node tests/ab_test.mjs --repeats 3       # 6 题 × 3 轮 × 2 组，期望 VERDICT=PASS
+node tests/bypass_test.mjs               # 明令分点时是否守得住，期望 VERDICT=PASS（卡片行 29 → 0）
+node tests/style_ab.mjs --set long --repeats 3   # 两组提示词对照，量排版密度
+node tests/rewrite_eval.mjs path/to/my_messages.json --top 6   # 拿真实回复做改写评估
+```
+
+`checks.mjs` 覆盖结构、规则库自检、开关两套行为、`defineTool` 参数编译、工具 `execute` / `render`，
+以及三轮红蓝军和外部校验的回归断言。`corpus.mjs` 用 12 条人写（≤30 分）与 9 条 AI 腔（≥40 分）
+的人工标注语料打分，是独立于规则标定过程的外部标尺，用来发现「改规则把尺子也改了」。
+`external_validate.mjs` 给任意目录下的文章打分并汇总，拿 2022 年前（ChatGPT 之前）的真人文章
+检验误报。`style_ab.mjs` 与 `rewrite_eval.mjs` 用于验证「提示词路线」和「改写路线」各自是否有效，
+结论记在 [docs/reviews/output-strategy.md](docs/reviews/output-strategy.md)。
+`measure_plugin_cost.mjs` 量插件每次请求多花多少 token，结论是固定 872 token（提示段 542 + 工具
+schema 330），折算进缓存后约占有效输入的 0.62%，见 [docs/reviews/plugin-cost.md](docs/reviews/plugin-cost.md)。
+
+## 打包要求
 
 `package.json` 必须包含 `"main"` 并导出 `"./package.json"`，否则宿主加载器读不到清单：
 
@@ -135,110 +173,35 @@ pnpm 仍会尊重 `package.json` 的 `files` 白名单，`docs/` 与 `tests/` �
 }
 ```
 
-> 本包不声明 `dependencies`：`@deepseek-ai/schemastery` 与 `@deepseek-ai/dsh-tools` 由
-> `~/.dsh/profiles/node_modules/@deepseek-ai/*`（junction）解析，禁止在 profile 里手工写依赖。
+本包不声明 `dependencies`：`@deepseek-ai/schemastery` 与 `@deepseek-ai/dsh-tools` 由宿主提供，
+不要在 profile 里手工写依赖。
 
-## 验证
-
-新克隆后先跑一次垫片脚本，把 `node_modules/@deepseek-ai` 链接到本机 profile 的同名目录
-（`node_modules` 不入库，`files` 白名单也把它排除在包外）：
-
-```powershell
-cd <本仓库>
-pwsh -File tests\setup_dev_links.ps1     # 期望 SETUP PASS
-node tests\checks.mjs                    # 结构 + 区分度 + 开关行为 + 标定回归 + 长度/性能 + 三轮红蓝军回归 + 外部校验回归，期望 TOTAL pass=177 fail=0
-node tests\corpus.mjs                    # 21 条标注语料（12 人写 ≤30 分 + 9 AI 腔 ≥40 分），期望 CORPUS pass=21 fail=0
-python tests\regression_deai_style.py    # 功能开关回归，期望 RESULT=PASS (35/35)
-
-# 效果验证（需要 DEEPSEEK_API_KEY，见 AGENTS.md §28 凭据注入）
-$env:DEEPSEEK_API_KEY = [Environment]::GetEnvironmentVariable('DEEPSEEK_API_KEY','User')
-node tests\ab_test.mjs --repeats 3       # 6 题 × 3 轮 × 2 组，期望 VERDICT=PASS（v1.3.0 实测 −72.8%）
-node tests\bypass_test.mjs              # 用户明令「分点列表」时是否守得住，期望 VERDICT=PASS（实测卡片行 29 → 0）
-node tests\style_ab.mjs --set long --repeats 3   # 两组提示词的对照实验（量的是排版密度，不是分数）
-node tests\rewrite_eval.mjs D:\path\my_messages.json --top 6   # 拿真实回复做改写评估，期望 VERDICT=PASS
-```
-
-- `checks.mjs`：语法、无 BOM/LF、清单结构、规则库自检、检测器区分度（AI 样例 ≥70、人写样例 ≤20）、
-  开/关两套断言、`defineTool` 参数编译、工具 `execute`/`render`，**标定回归**（强/弱反转变体分离、
-  `explainer-frame` 命中、科普腔不再漏报），**长度与性能**（同一 AI 样例 ×1/×2/×5/×20 均 ≥70 分且极差 ≤15、
-  10 万换行在 800ms 内完成、未闭合围栏被剥离、表格不再被删空），以及**第二轮红蓝军回归** 21 项
-  （`service-close` 裸「有」、纯排版受限出口、emoji 键帽与国旗、四反引号/`~~~` 围栏、半角键值对、
-  零宽字符规避、黑话去重、重叠命中只算一次、opening 作用域不受前置换行影响、`analyzed` 字段、
-  报告自洽，以及用断言锁住三条「刻意不定罪」的排版边界），以及**第三轮红蓝军回归** 28 项
-  （排版证据必须全部标 `evidence:"format"`、规则/指标数量门禁、`formatNudge` 阈值与封顶、
-  节奏加成上限、`k` 的长度归一化、9 字强信号稿的 `analyzed`、CRLF 表格、引用块围栏、
-  四空格缩进代码、跨行行内代码、抽象名词复读只计一次、卡片禁令进核心档），以及**外部校验回归** 4 项
-  （自问自答不得跨行、`enumerate-all` 不得拿「等等」定罪）。
-- `external_validate.mjs`：给任意目录下的文章打分并汇总，用来做**外部标尺**——拿 2022 年前（ChatGPT
-  之前）的真人文章检验误报，见 [docs/reviews/external-validation.md](docs/reviews/external-validation.md)。
-- `score_my_output.mjs`：给会话记录里助手写过的正文打分，用来检查**我自己**的输出。
-- `calibrate_structure.py`：把候选结构/修辞指标铺到五套语料上，先看真人分布再决定写不写规则
-  （`rhetoric-pileup` 就是从这里筛出来的，同时否掉了 7 条看起来很像但量下来没区分度的指标）。
-- `style_ab.mjs`：两组提示词的对照实验，指标取自 `lint().layout`（箭头密度、加粗密度、行首加粗标签、
-  卡片行、偏密标记）。三轮实测结论是**往提示词里加文风规则量不出稳定效果**，记在
-  [docs/reviews/output-strategy.md](docs/reviews/output-strategy.md)。
-- `rewrite_eval.mjs`：拿真实回复当输入，让模型按一份改写策略重写，再量前后差。12 条实测排版指标被打平
-  （箭头 51→1、行首加粗标签 24→0、偏密样本 12/12→0/12），是这份输出策略唯一的正面证据。
-- `corpus.mjs`：`tests/corpus/{human_zh,ai_zh}.json` 里 20 条人工标注语料，只用 `lib/lint.js` 打分并比对
-  各自的 `max`/`min` 阈值。它是独立于规则标定过程的外部标尺，用来发现「改规则把尺子也改了」。
-- `regression_deai_style.py`：A–G 七组 35 项断言，含「关 = 旧行为」与边界（非法 level、`injectLintTool:false`）。
-- `measure_plugin_cost.mjs`：量插件每次请求多花多少 token（对照前缀 + `usage.prompt_tokens`），
-  以及工具调用一次的往返开销。结论：固定 872 token/请求（段 542 + 工具 schema 330），
-  折算进缓存后约占有效输入的 0.62%，见 [docs/reviews/plugin-cost.md](docs/reviews/plugin-cost.md)。
-- `ab_test.mjs`：6 题 × N 轮 × 两组，输出 `ab_result.json` 与逐条对照，并按验收口径（平均分下降 ≥50%、
-  基线 ≥35 分的题目全部 <35、**逐样本达标率 ≥80%**）自动打印 `VERDICT=PASS|FAIL`。可用 `--min-drop-pct` /
-  `--target` / `--high-bar` 调整。
-
-## 红蓝军审查记录
-
-`docs/reviews/` 保存了三轮「质疑—优化—测试」的原始报告与返工记录：
+## 文档
 
 | 文件 | 内容 |
 |---|---|
-| `round1-red.md` | 第一轮红队攻击报告：12 条失守、14 条规则级缺陷、5 条设计级质疑 |
-| `round1-bug.md` | 第一轮代码级缺陷审计：7 条缺陷（含 O(n²) 正则与长文漏报） |
-| `round1-fix.md` | 第一轮的逐条处置、评分模型改动理由、刻意保留的边界 |
-| `round2-red.md` | 第二轮红队报告：12 条失守（5 误报 / 4 漏报 / 3 口径）+ 9 组未打穿 |
-| `round2-bug.md` | 第二轮代码级缺陷审计：7 类缺陷 + 测试可信度（断言对分数不敏感） |
-| `round2-fix.md` | 第二轮的逐条处置、**为什么「纯排版」不能单独定罪**（含 AI/人类排版权重重叠数据） |
-| `round3-red.md` | 第三轮红队报告：11 条失守（3 误报 / 3 漏报 / 4 口径 / 1 测试可信度）+ 7 组未打穿 |
-| `round3-bug.md` | 第三轮缺陷审计：11 条缺陷（高 2）+ 17 组变异测试（7 条零覆盖路径） |
-| `round3-fix.md` | 第三轮的逐条处置、文档与实现不一致的根因、**排版证据全面降为观察档**的决定与代价 |
-| `external-validation.md` | 外部校验：15 篇 2022 年前真人文章 0 篇越线；两处误报已修；**我自己的输出排版层面仍很 AI** |
-| `output-strategy.md` | 针对「我自己怎么写」的优化：64 条自有正文的体检、提示词路线被否的三轮实验、定稿的七条改写策略与收敛判据 |
-| `rhetoric-calibration.md` | 修辞堆砌（把过程写成有脾气/会缴械的角色）的标定：真人语料上限 4.3%，样例 22%，所以这条允许单独定罪 |
+| [docs/AI语言范式分析.md](docs/AI语言范式分析.md) | 语言范式拆解：哪些写法是 AI 标签、为什么 |
+| [docs/研究现状.md](docs/研究现状.md) | 外部研究综述 |
+| [docs/标记总表.csv](docs/标记总表.csv) | 中英标记对照表 |
+| [docs/验收报告.md](docs/验收报告.md) | 三轮验收的数据、判定与已知边界 |
+| `docs/reviews/round1-red.md` | 第一轮红队攻击报告：12 条失守、14 条规则级缺陷、5 条设计级质疑 |
+| `docs/reviews/round1-bug.md` | 第一轮代码级缺陷审计：7 条缺陷（含 O(n²) 正则与长文漏报） |
+| `docs/reviews/round1-fix.md` | 第一轮的逐条处置、评分模型改动理由、刻意保留的边界 |
+| `docs/reviews/round2-red.md` | 第二轮红队报告：12 条失守（5 误报 / 4 漏报 / 3 口径）+ 9 组未打穿 |
+| `docs/reviews/round2-bug.md` | 第二轮代码级缺陷审计：7 类缺陷 + 测试可信度 |
+| `docs/reviews/round2-fix.md` | 第二轮的逐条处置、为什么纯排版不能单独定罪 |
+| `docs/reviews/round3-red.md` | 第三轮红队报告：11 条失守 + 7 组未打穿 |
+| `docs/reviews/round3-bug.md` | 第三轮缺陷审计：11 条缺陷 + 17 组变异测试 |
+| `docs/reviews/round3-fix.md` | 第三轮的逐条处置、文档与实现不一致的根因 |
+| `docs/reviews/external-validation.md` | 外部校验：15 篇 2022 年前真人文章 0 篇越线，两处误报已修 |
+| `docs/reviews/output-strategy.md` | 生成侧的优化：提示词路线被否的三轮实验、定稿的改写策略与收敛判据 |
+| `docs/reviews/rhetoric-calibration.md` | 修辞堆砌的标定：真人语料上限 4.3%，样例 22%，所以允许单独定罪 |
+| `docs/reviews/plugin-cost.md` | 插件固定开销的实测与折算 |
 
-探针脚本已入库：`tests/red1/`、`tests/bug1/`、`tests/red2/`、`tests/bug2/`；
-变异测试台在 `tmp/mut3/run_mutations.py`（8 组变异，全部被断言杀死）。
+## 已知问题
 
-### 一条重要的能力边界
+检测器给出的分数是风格强度，不是作者身份。一个爱写拟人科普的真人作者同样会被 `rhetoric-pileup`
+打中，这是刻意的：它判的是这段文字读起来像不像 AI 写的。
 
-**排版工整本身不是定罪证据。** 第二轮实测的排版权重里，AI 样本（纯列表 3.7 / 纯表格 4.0 / emoji 5.33）
-与人类样本（干净清单 5.34 / 工作日志 4.0 / 会议纪要 2.0）完全重叠，所以「只有排版、没有任何语言套话」的回答
-只会得到一个 ≤25 分的观察分，不会进「中等 AI 腔」。
-
-第三轮把这条原则落到了实现：`cat:"fmt"` 的五条正则规则（`bold-label-line`、`bold-start-line`、
-`bold-heading`、`bold-inline-label`、`arrow-symbol`）原先**仍然直接计入定罪权重**——两条 `**注意**：`
-就能把 31 字人写说明顶到 60 分，人类技术文档 1/2/3 条加粗标签 = 29/47/61 分、说明书 2/4 条 = 52/75 分。
-现在它们与 `card-ratio`（「整篇几乎只剩卡片行」）一起只进 `formatWeight`，由 `checks.mjs` 的
-14.1 断言锁死。代价明确：**纯排版的 AI 回答（如 `tests/corpus/ai_zh.json` 的 A4）属于刻意不定罪区，
-只给 25 分观察分**——因为人类说明书、产品简介、技术文档与它在结构上不可分。
-
-同理，DSH 的 `agent/assistant-stream` 是只读事件，插件**无法**改写助手已生成的文本——它是提示 + 自检，不是强制过滤器。
-
-### 为什么修辞堆砌可以定罪、排版不能
-
-排版不可定罪是因为**量到了重叠**：人类说明书、周报、技术文档与 AI 回答在加粗/卡片/列表密度上没有差别。
-修辞堆砌走的是另一条路——**量到了上限**：`rhetoric-pileup` 在 2022 年前真人文章 13 篇上最高 0%，
-在知识库 183 篇真人语料上最高 4.3%（多为「像…一样」的明喻，词表刻意不收），而目标样例是 22%。
-差 5 倍以上，且中间没有重叠带，所以它进 `strong` 档、可以单独把一篇 3300 字的文章从 11 分推到 40 分。
-标定数据与逐篇命中见 `docs/reviews/rhetoric-calibration.md`。
-
-这条规则同时踩了两个刹车：整篇少于 12 句不做统计（占比在短文本上是噪声）、命中少于 5 句不算
-（写文章用一两个比喻是正常汉语）。真人语料、`corpus` 的 12 条人写样本与我自己的 64 条历史输出
-在这条规则上都是 0 命中。
-
-已知边界与未解决问题汇总在 `docs/验收报告.md` 第八、九、十一节。
-
-> ⚠️ 请勿对插件目录执行 `Get-ChildItem -Recurse`：开发用的 `node_modules\@deepseek-ai` 是 junction，
-> 其内部 `cordis → cordis-plugin-include → cordis` 会形成无限深的目录链（已两次因此卡住命令）。
+仍然存在的盲区：单条正则没有一条是 AI 独有的，有效性依赖密度归一化与多类证据叠加，所以单个命中
+不能当作证据；跨段落的论证结构、观点是否真的成立，这套规则一样看不见。
