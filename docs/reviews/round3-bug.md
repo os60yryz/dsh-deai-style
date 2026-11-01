@@ -1,6 +1,6 @@
 # dsh-deai-style v1.2.0 第三轮代码级缺陷审计（独立审计方）
 
-- 仓库：`D:\GitRepos\dsh-deai-style.git`，package.json `version: "1.2.0"`
+- 仓库：本仓库根目录，package.json `version: "1.2.0"`
 - 版本指纹（SHA256 前 16 位）：`lib/ruleset.js` = `AAF52F9F1F07DDF7`，`lib/lint.js` = `4FB9B3A87C8219D7`
 - 审计时间：2026-10-15　审计方：第三轮（代码缺陷 + 测试可信度 + 变异测试）
 - 实验室产物：`tmp/bug3/`（`probe1.mjs`/`probe2.mjs`/`probe3.mjs` + 输出、`measure.mjs`、`setup_mut.py`、`mut2.py`、`mut_result.json`、`mut2_result.json`）
@@ -231,7 +231,7 @@ AI 腔评分：48/100（无正文可评）｜正文 8 字，命中片段 1 处�
 ## 附：复现命令
 
 ```
-cd D:\GitRepos\dsh-deai-style.git
+cd <本仓库根目录>
 node tmp\bug3\measure.mjs          # H1 复现、规则数、提示词长度、N2 复测
 node tmp\bug3\probe1.mjs           # stripCode 形态 / 零宽 / emoji / CRLF 表格
 node tmp\bug3\probe2.mjs           # 评分边界、formatNudge 跳变、k 曲线、bandOf

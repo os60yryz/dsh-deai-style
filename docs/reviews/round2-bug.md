@@ -1,6 +1,6 @@
 # dsh-deai-style v1.1.0 第二轮代码级缺陷审计（独立审计方）
 
-- 仓库：`D:\GitRepos\dsh-deai-style.git`，commit `854d40a`，版本 v1.1.0
+- 仓库：本仓库根目录，commit `854d40a`，版本 v1.1.0
 - 审计时间：2026-10-15　审计方：第二轮（代码缺陷 + 测试可信度），与红队职责不同
 - 证据脚本：`tmp/bug2/probe1.mjs`（D1-D7 复测）、`tmp/bug2/probe2.mjs`（超线性压测）、`tmp/bug2/probe3.mjs`（口径/静默失败/边界）、`tmp/bug2/setup_mut.py` + `tmp/bug2/analyze_mut.py`（变异测试）、`tmp/bug2/mut_summary.txt`、`tmp/bug2/probe3.json`
 - 全程未修改 `index.js`、`lib/`、`tests/`、`package.json`、`docs/` 现有文件

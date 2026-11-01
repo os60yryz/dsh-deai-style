@@ -20,7 +20,11 @@ const opt = (name, dflt) => {
 };
 const has = (name) => argv.includes(name);
 
-const dir = opt("--dir", "D:/GitRepos/Others/tmp/corpus_pre2022");
+const dir = opt("--dir", "");
+if (!dir) {
+  console.error("缺少 --dir：请指定待评分的 txt 目录");
+  process.exit(1);
+}
 const outFile = opt("--out", "");
 const quiet = has("--quiet");
 

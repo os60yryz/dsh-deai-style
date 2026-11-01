@@ -6,7 +6,7 @@ import re
 import shutil
 import subprocess
 
-ROOT = r"D:\GitRepos\dsh-deai-style.git"
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 BASE = os.path.join(ROOT, "tmp", "bug3")
 PLUG = os.path.join(BASE, "mut2")
 LINT = "lib/lint.js"

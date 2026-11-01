@@ -14,7 +14,7 @@ import sys
 import zstandard as zstd
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-ROOT = r"C:\Users\zhenz\.dsh\sessions"
+ROOT = os.environ.get("DSH_SESSIONS_DIR", os.path.expanduser("~/.dsh/sessions"))
 FIXED = 932          # 实测：系统提示段 542 + 工具 schema 390
 CACHE_DISCOUNT = 0.1  # DeepSeek 缓存命中按约 0.1 倍计价
 

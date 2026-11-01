@@ -8,7 +8,7 @@
 
 ChatGPT 是 2022-11-30 发布的。此前的中文互联网文章不可能是「AI 生成」的，所以**任何被打到定罪线的样本都是误报**。这是一把外部标尺——不依赖我自己定的规则，也不依赖我自己的语料。
 
-语料来自 `D:\GitRepos\Others\scripts\fetch_pre2022_corpus.py`：15/18 个站点可达（人民网、新华网、果壳、博客园、简书、澎湃、中国政府网、中国记协网、新浪、搜狐、网易、CSDN、知乎、阮一峰博客），抓取正文后落 `D:\GitRepos\Others\tmp\corpus_pre2022\`。
+语料来自 `scripts/fetch_pre2022_corpus.py`：15/18 个站点可达（人民网、新华网、果壳、博客园、简书、澎湃、中国政府网、中国记协网、新浪、搜狐、网易、CSDN、知乎、阮一峰博客），抓取正文后落 `tmp/corpus_pre2022/`。
 
 抓到 17 篇，13 篇 ≥300 字；2 篇 0 字（豆瓣影评是 JS 渲染、少数派正文选择器没命中），逐篇标了体裁。
 
@@ -29,7 +29,7 @@ ChatGPT 是 2022-11-30 发布的。此前的中文互联网文章不可能是「
 
 ## 三、逐条判读：哪些是真指纹，哪些是人类也在用的形式
 
-按命中的规则逐条看（`D:\GitRepos\Others\scripts\inspect_corpus_hits.py` 打印了每处命中片段），分成三类：
+按命中的规则逐条看（`scripts/inspect_corpus_hits.py` 打印了每处命中片段），分成三类：
 
 **甲类·真指纹，但人类偶尔也用**（保留，靠密度而非单次定罪）
 
@@ -64,7 +64,7 @@ ChatGPT 是 2022-11-30 发布的。此前的中文互联网文章不可能是「
 
 ## 四、我自己的输出有没有 AI 味
 
-把会话记录里我写给用户的正文抽出来打分（`D:\GitRepos\Others\scripts\extract_my_messages.py` 解压 `~/.dsh/sessions/--D-GitRepos-Others--/<session>/session.v4.jsonl.zstd`，只取主会话、跳过子代理会话，去重流式快照后取 `content[].type=="text"`）。
+把会话记录里我写给用户的正文抽出来打分（`scripts/extract_my_messages.py` 解压 `~/.dsh/sessions/<cwd-slug>/<session>/session.v4.jsonl.zstd`，只取主会话、跳过子代理会话，去重流式快照后取 `content[].type=="text"`）。
 
 样本：8 个主会话、2026-10-04 至 2026-10-15、64 条正文、39,869 字（插件是 10-15 22:56 才生效的，所以这些样本绝大多数是**没有插件时**的我）。
 
@@ -117,19 +117,19 @@ ChatGPT 是 2022-11-30 发布的。此前的中文互联网文章不可能是「
 
 ```powershell
 # 1. 抓 2022 年前的语料（联网）
-python D:\GitRepos\Others\scripts\fetch_pre2022_corpus.py
+python scripts/fetch_pre2022_corpus.py
 
 # 2. 打分 + 统计
-node D:\GitRepos\dsh-deai-style.git\tests\external_validate.mjs `
-  --dir D:\GitRepos\Others\tmp\corpus_pre2022 `
-  --out D:\GitRepos\Others\tmp\corpus_pre2022\result_v2.json
+node tests/external_validate.mjs `
+  --dir tmp/corpus_pre2022 `
+  --out tmp/corpus_pre2022/result_v2.json
 
 # 3. 看命中片段，人工判断真指纹还是误报
-python D:\GitRepos\Others\scripts\inspect_corpus_hits.py `
-  D:\GitRepos\Others\tmp\corpus_pre2022\result_v2.json --min-score 15
+python scripts/inspect_corpus_hits.py `
+  tmp/corpus_pre2022/result_v2.json --min-score 15
 
 # 4. 抽我自己的输出并打分
-python D:\GitRepos\Others\scripts\extract_my_messages.py --sessions 8
-node D:\GitRepos\dsh-deai-style.git\tests\score_my_output.mjs `
-  D:\GitRepos\Others\tmp\my_messages.json --restart-ts 1792076160000
+python scripts/extract_my_messages.py --sessions 8
+node tests/score_my_output.mjs `
+  tmp/my_messages.json --restart-ts 1792076160000
 ```

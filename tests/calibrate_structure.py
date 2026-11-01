@@ -15,10 +15,12 @@ import re
 import statistics
 import sys
 
-KB = r"D:\GitRepos\知识库.git"
-PRE2022 = r"D:\GitRepos\Others\tmp\corpus_pre2022\*.txt"
-AI_CORPUS = r"D:\GitRepos\dsh-deai-style.git\tests\corpus\ai_zh.json"
-TARGET = r"C:\Users\zhenz\Desktop\Desktop-仅校对稿\【战争与化学 No.19 草木灰】军营里烧出来的万能碱-仅校对稿.md"
+_HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(_HERE)
+KB = os.environ.get("DEAI_KB_ROOT", "")          # 真人语料库根目录（可选）
+PRE2022 = os.environ.get("DEAI_PRE2022_GLOB", "")  # 2022 前真人文章 glob（可选）
+AI_CORPUS = os.path.join(REPO, "tests", "corpus", "ai_zh.json")
+TARGET = os.environ.get("DEAI_TARGET", "")       # 待标定的那篇文章（可选）
 
 SENT_RE = re.compile(r"[^。！？!?\n]+[。！？!?]")
 
@@ -159,19 +161,23 @@ def main():
     ap.add_argument("--json", default="")
     a = ap.parse_args()
 
+    if not TARGET:
+        ap.error("未设置 DEAI_TARGET：请用环境变量指定要标定的那篇文章")
     target = analyze(open(TARGET, encoding="utf-8").read())
 
-    groups = {
-        "2022前真人": load_pattern([PRE2022]),
-        "知识库·高老师": load_pattern([os.path.join(KB, "有何高见", "**", "*仅校对稿.md")], limit=40, step=7),
-        "知识库·新闻": load_pattern([os.path.join(KB, "新闻", "**", "*仅校对稿.md")], limit=30, step=5),
-        "知识库·其他作者": load_pattern(
+    groups = {"AI 语料库": load_ai_corpus()}
+    if PRE2022:
+        groups["2022前真人"] = load_pattern([PRE2022])
+    if KB:
+        groups["真人语料库·高老师"] = load_pattern(
+            [os.path.join(KB, "有何高见", "**", "*仅校对稿.md")], limit=40, step=7)
+        groups["真人语料库·新闻"] = load_pattern(
+            [os.path.join(KB, "新闻", "**", "*仅校对稿.md")], limit=30, step=5)
+        groups["真人语料库·其他作者"] = load_pattern(
             [os.path.join(KB, "王帅真", "**", "*仅校对稿.md"),
              os.path.join(KB, "尖峰苏打", "**", "*仅校对稿.md"),
              os.path.join(KB, "大叔的车库书场", "**", "*仅校对稿.md")],
-            limit=30, step=5),
-        "AI 语料库": load_ai_corpus(),
-    }
+            limit=30, step=5)
 
     print("=" * 96)
     print("目标文章")

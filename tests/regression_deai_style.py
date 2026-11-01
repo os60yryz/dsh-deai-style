@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""dsh-deai-style 功能开关回归（AGENTS.md §12）
+"""dsh-deai-style 功能开关回归（功能开关回归）
 
 跑法（任意 cwd）：
     python tests/regression_deai_style.py [--debug]

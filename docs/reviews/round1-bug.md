@@ -1,6 +1,6 @@
 # dsh-deai-style 缺陷审计（第一轮）
 
-审计对象：`D:\GitRepos\dsh-deai-style.git`（源码只读，未改动任何实现文件）
+审计对象：本仓库根目录（源码只读，未改动任何实现文件）
 审计方式：只读静态复核 + 临时探针实测（`tmp/bug1/probe1.mjs`、`probe2.mjs`、`probe3.mjs`）
 基线：`node tests/checks.mjs` = 95 PASS / 0 FAIL；`python tests/regression_deai_style.py` = 35 PASS / 0 FAIL（两者本轮都在缺陷存在的前提下全绿，见第四章）
 环境：Node v24.19.0，Windows，cwd = 仓库根

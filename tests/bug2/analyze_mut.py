@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json, os
-BASE = r"D:\GitRepos\dsh-deai-style.git\tmp\bug2"
+BASE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "tmp", "bug2")
 res = json.load(open(os.path.join(BASE, "mut_result.json"), encoding="utf-8"))
 lines = []
 for k, v in res.items():

@@ -1,7 +1,7 @@
 # dsh-deai-style 红队评审 · 第一轮（攻击报告）
 
 - 日期：2026-10-15
-- 靶子：`D:\GitRepos\dsh-deai-style.git` v1.0.3（`lib/ruleset.js` SHA256 前缀 `5EEF41C5775DD821`）
+- 靶子：本仓库根目录 v1.0.3（`lib/ruleset.js` SHA256 前缀 `5EEF41C5775DD821`）
 - 方法：全部离线实测。用 `node` 直接 import `lib/lint.js` / `lib/ruleset.js` / `lib/prompt.js` / `lib/plan.js`，脚本在 `tmp/red1/`：`probe1.mjs`（22 条对抗样本 + 边界 + 性能）、`probe2.mjs`（18 条规则级定点复现）、`probe3.mjs`（长文摊薄定量 + 围栏配对 + 人写长文 + 纯函数）。原始输出 `tmp/red1/out1.json`、`out2.json`、`out3.json`。
 - 未联网、未调用任何模型 API、未修改靶子任何文件（只写本报告与 `tmp/red1/`）。
 
@@ -189,9 +189,9 @@
 
 **6.3 "已装副本 = 源码"——证伪失败（靶子在此处站得住）**
 怎么试的：对三个位置算 `lib/ruleset.js` 的 SHA256 并读 `package.json` 版本：
-- `D:\GitRepos\dsh-deai-style.git` → 1.0.3，`5EEF41C5775DD821…`
-- `D:\GitRepos\Others\plugins\dsh-deai-style` → 1.0.3，`5EEF41C5775DD821…`
-- `C:\Users\zhenz\.dsh\profiles\desktop\node_modules\dsh-deai-style` → 1.0.3，`5EEF41C5775DD821…`
+- 本仓库根目录 → 1.0.3，`5EEF41C5775DD821…`
+- 旧开发目录 → 1.0.3，`5EEF41C5775DD821…`
+- 宿主已装副本 → 1.0.3，`5EEF41C5775DD821…`
 
 三份完全一致，规则 34 条 + 指标 6 个。"A/B 测的是另一个版本"这条质疑不成立。**攻击失败，如实记录。**
 
@@ -207,12 +207,12 @@
 
 ```powershell
 # 单条查询（任务给定口径）
-node --input-type=module -e "const {lint}=await import('file:///D:/GitRepos/dsh-deai-style.git/lib/lint.js'); console.log(JSON.stringify(lint('待测文本'),null,1))"
+node --input-type=module -e "const {lint}=await import('file://<本仓库>/lib/lint.js'); console.log(JSON.stringify(lint('待测文本'),null,1))"
 
 # 本报告全部数据
-node D:\GitRepos\dsh-deai-style.git\tmp\red1\probe1.mjs   # → tmp/red1/out1.json（22 对抗样本 + 边界 + 性能 + 稳定性）
-node D:\GitRepos\dsh-deai-style.git\tmp\red1\probe2.mjs   # → tmp/red1/out2.json（18 条规则级定点复现）
-node D:\GitRepos\dsh-deai-style.git\tmp\red1\probe3.mjs   # → tmp/red1/out3.json（长文摊薄定量 + 围栏 + 人写长文 + 纯函数）
+node tmp/red1/probe1.mjs   # → tmp/red1/out1.json（22 对抗样本 + 边界 + 性能 + 稳定性）
+node tmp/red1/probe2.mjs   # → tmp/red1/out2.json（18 条规则级定点复现）
+node tmp/red1/probe3.mjs   # → tmp/red1/out3.json（长文摊薄定量 + 围栏 + 人写长文 + 纯函数）
 ```
 
 实测过的边界清单（打穿 / 未打穿都列出）：超短文本（14/18/20/22 字）、58 字随笔、278 字人写长文、118 字人写议论文、10258 字长文、空文本、纯空白、纯 fenced 代码块、闭合行内代码、未闭合围栏、未闭合行内代码、代码字符串内含 ` ``` `、Tab 缩进 bullet、CRLF 换行、全角/半角冒号、全角/半角标点连接词、`——` 与单独的 `—`、白名单内外 emoji、带 VS16 的 emoji、Markdown 表格（纯表格与混合）、引用块 `>`、连续 3 次调用稳定性、34 条规则 id 唯一性、非法 level 回退、`off` 开关、`renderPrompt` 三档长度（766/470/0）、性能压测 5 组（1.4–22.1 ms）。

@@ -1,7 +1,7 @@
 // 输出策略 A/B：同一批「我日常要写的文体」，比较当前提示词与候选提示词。
 // 与 ab_test.mjs 的区别：ab_test 比的是「有无规则」，这个比的是「两版规则谁更稳」。
 //
-// 用法（凭据见 ~/.dsh/AGENTS.md §28）：
+// 用法（工具壳会擦除凭据型环境变量，须显式设置）：
 //   $env:DEEPSEEK_API_KEY = [Environment]::GetEnvironmentVariable('DEEPSEEK_API_KEY','User')
 //   node tests/style_ab.mjs [--repeats 3] [--out <dir>] [--dry-run]
 //
@@ -77,7 +77,7 @@ const PROMPT_SETS = {
       id: "A1",
       text:
         "下面是我刚跑完的 8 条工具结果，请整理成一份给用户看的回复，不少于 700 字：\n" +
-        "1. 备份 8 个文件到 D:\\tmp\\_backup，字节数 282/2480/516/5270/6124/1305/2732/11869\n" +
+        "1. 备份 8 个文件到 tmp/_backup，字节数 282/2480/516/5270/6124/1305/2732/11869\n" +
         "2. pnpm pack 产出 dsh-deai-style-1.3.0.tgz（12480 字节）\n" +
         "3. 安装返回 application=restart-required，exitCode=0\n" +
         "4. 已装副本版本号 1.3.0，8 个文件与仓库 SHA256 全同\n" +
@@ -166,7 +166,7 @@ if (DRY) {
 
 const key = process.env.DEEPSEEK_API_KEY;
 if (!key) {
-  console.error("缺少 DEEPSEEK_API_KEY（工具壳里该变量会被擦除，见 AGENTS.md §28，需显式注入）");
+  console.error("缺少 DEEPSEEK_API_KEY（工具壳里该变量会被擦除，工具壳会擦除，需显式注入）");
   process.exit(2);
 }
 

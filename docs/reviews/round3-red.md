@@ -2,7 +2,7 @@
 
 ## 攻击对象指纹
 
-- 仓库 `D:\GitRepos\dsh-deai-style.git`，`package.json` 的 `version` = `"1.2.0"`。
+- 仓库 本仓库根目录，`package.json` 的 `version` = `"1.2.0"`。
 - `lib/ruleset.js` SHA256 = `AAF52F9F1F07DDF7E5784A7A227A4F2F8D3CBF46DEA6ECAB357A61C72A008C86`（前缀 `AAF52F9F`），372 行。
 - `lib/lint.js` 343 行；`lib/prompt.js` 40 行；`index.js` 65 行。
 - 基线复跑（本机 v1.2.0）：`node tests/checks.mjs` → `TOTAL pass=126 fail=0`；`node tests/corpus.mjs` → `CORPUS pass=20 fail=0`；`python tests/regression_deai_style.py` → `RESULT=PASS`（35/35）。
@@ -238,7 +238,7 @@ M14 与 M16 是第二轮对外宣称的两条门面修复，改回去测试一�
 
 ## 七、未做的部分与导致的限制
 
-- **没有做真实模型调用**。本轮全部是静态阅读 + 本地 `lib/` 实测。凭据型环境变量在 DSH 派生的工具进程里被擦除（AGENTS.md §28），`ab_test.mjs` 需要显式注入 `DEEPSEEK_API_KEY`；本轮任务限定「只做静态阅读 + 本地实测」，没有联网也没有注入凭据。所以「用户要求分点时第 16 条兜底到底守不守得住」「`deai_scan` 的 token 开销」这两条仍然是未实测状态。
+- **没有做真实模型调用**。本轮全部是静态阅读 + 本地 `lib/` 实测。凭据型环境变量在 DSH 派生的工具进程里被擦除（工具壳会擦除凭据型环境变量），`ab_test.mjs` 需要显式注入 `DEEPSEEK_API_KEY`；本轮任务限定「只做静态阅读 + 本地实测」，没有联网也没有注入凭据。所以「用户要求分点时第 16 条兜底到底守不守得住」「`deai_scan` 的 token 开销」这两条仍然是未实测状态。
 - **变异测试只覆盖 `checks.mjs`**。`corpus.mjs`（20 条）与 `regression_deai_style.py`（35 项）没有做变异验证，所以「6/17 存活」是下界，不是全貌。
 - **人写样本共 19 条**（probe1 的 12 条 + probe2 的 7 条），不是统计意义上的分布。FP3-01 的严重程度依赖「行首加粗标签在中文技术文档里有多常见」这个我没法用本地样本回答的问题——它可能比实测更常见，也可能更少见。
 - **没有读 `docs/reviews/round2-bug.md` 全文**，只读了它的结论摘要（`docs/验收报告.md` 第 286 行转述的「93 条对 score 不敏感、mergeSpans 不合并仍 103/103 通过」）。本轮的 23/126 是在该结论之外的独立复测，没有逐条比对它点名的断言。

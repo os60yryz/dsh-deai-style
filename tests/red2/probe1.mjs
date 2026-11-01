@@ -97,7 +97,7 @@ npm install dsh-deai-style
 
 ## 配置
 
-在 \`~/.dsh/settings.yaml\` 中加入：
+在宿主设置文件（\`settings.yaml\`）中加入：
 
 \`\`\`yaml
 deai:

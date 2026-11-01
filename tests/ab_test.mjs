@@ -1,7 +1,7 @@
 // deai-style A/B 效果验证：同一批中文提示词，基线（无去AI风格规则） vs 实验（注入 strict 规则段）
 // 用插件自带 lib/lint.js 对两边产出打分，统计均值差与命中模式差。
 //
-// 用法（必须先注入凭据，见 ~/.dsh/AGENTS.md §28）：
+// 用法（必须先注入凭据；工具壳会擦除凭据型环境变量，须显式设置）：
 //   $env:DEEPSEEK_API_KEY = [Environment]::GetEnvironmentVariable('DEEPSEEK_API_KEY','User')
 //   node tests/ab_test.mjs [--out <dir>] [--repeats 1] [--dry-run]
 //
@@ -114,7 +114,7 @@ function summarize(rows, condId) {
 async function main() {
   const key = (process.env.DEEPSEEK_API_KEY || "").trim();
   if (!key && !DRY) {
-    console.error("FAIL 未取到 DEEPSEEK_API_KEY：请在 pwsh 内先注入用户级环境变量后再运行（AGENTS.md §28.2）");
+    console.error("FAIL 未取到 DEEPSEEK_API_KEY：请在 pwsh 内先注入用户级环境变量后再运行（工具壳凭据擦除）");
     process.exit(2);
   }
   console.log(`# deai-style A/B  model=${MODEL}  repeats=${REPEATS}  dry=${DRY}`);
